@@ -59,17 +59,17 @@ SPEC-01 ──▶ SPEC-02 ──▶ SPEC-03 ──▶ SPEC-04 ──▶ SPEC-05 
 
 | SPEC | 状态 | 完成日期 | 备注 |
 |---|---|---|---|
-| 01 | ☐ 未开始 | | |
-| 02 | ☐ 未开始 | | |
-| 03 | ☐ 未开始 | | |
-| 04 | ☐ 未开始 | | |
-| 05 | ☐ 未开始 | | |
-| 06 | ☐ 未开始 | | |
-| 07 | ☐ 未开始 | | |
+| 01 | ☑ 完成 | 2026-10-24 | 脚手架全量落地：Go 模块+目录骨架、/health、Vite+PrimeVue4 前端、Makefile embed 链路；偏差见 SPEC-01 澄清记录 |
+| 02 | ☑ 完成 | 2026-10-24 | 存储层/日志/鉴权/Server Config API/UI 路由全量落地；黑盒集成测试 7 项通过；偏差见 SPEC-02 澄清记录 |
+| 03 | ☑ 完成 | 2026-10-24 | Torznab 模型库全量落地：71 类别表/查询解析/能力位/ReleaseInfo + RSS·caps·error·indexers XML 序列化；golden 对拍 9 份全过，覆盖率 models 93.5%/torznab 94.4%；偏差见 SPEC-03 澄清记录 |
+| 04 | ☑ 完成 | 2026-10-24 | Indexer 接口+Base 模板（Filter/Fix/去重/健康窗口/下载）、configdata 9 类 item+golden、httpclient 栈（限速/自研 jar/代理 socks4|5/CF+FlareSolverr/重试）、注册表+IndexerManager 生命周期+meta 骨架；main.go 装配入库；验收 1-7 全过，澄清记录 11 条 |
+| 05 | ☑ 完成 | 2026-10-24 | Cardigann 引擎 I 全量落地：定义模型+582 份 yml 加载+schema 校验、模板引擎（and/or/eq/ne/if/range/过滤器两阶段解析）、配置表单（settings→configdata 9 类映射）、登录全矩阵（form/post/cookie/get/oneurl+captcha+multipart）、caps 构造（desc→自定义类别 id≥100000）、搜索/下载请求生成（.Query 变量集/keyword tokens/intersect+"!"/$raw/POST 双编码/windows-1251 转码/magnet infohash/before+pathselector/testlinktorrent）；模板单测 37、登录矩阵 12、请求 golden 17 定义+单测 15、真实 yml config 形状 5；验收 1-8 全过，澄清记录 9 条 |
+| 06 | ☑ 完成 | 2026-10-24 | Cardigann 引擎 II 全量落地：handleSelector 全分支（selector/remove/case/attribute/text+rows/field 级）、27 滤镜（regexp2 .NET 正则语义）、.NET 布局翻译+FromUnknown 模糊解析、分类映射（keywordsfilters+filter 声明式+case）、XML/JSON 行解析与 rows/keywordfields/multiple/after/before/andmatch/filters/relogin；20 真实定义 e2e 对拍全过（filter 126 例+rows 24 例+sample 20 定义）；验收 1-5 全过，澄清记录 7 条 |
+| 07 | ☑ 完成 | 2026-10-24 | 缓存服务（SHA-256(query JSON) 键/TTL 秒/Tracker 字段缓存层填充/300·3000 上限）、meta 收口（all+FilterFunc 类型/tag 过滤）、ResultsController（torznab 6 型/potato golden/手动搜索聚合 zip 状态整数）、IndexerApiController（DTO/Config/Test/Delete/Cache 视图双变体）、代理三端点（dl bencode 规范化重编码/img 状态透传/bh .NET Ticks 文件名+IOException GUID 回退）、DownloadActionFilter &amp;-fallback；fixtures 假站点+3 手写 fake+fakecardigann 覆盖 def；集成测试 17 项全过；验收 1-5 全过，澄清记录 15 条 |
 | 08 | ☐ 未开始 | | |
 | 09 | ☐ 未开始 | | |
 | 10 | ☐ 未开始 | | |
-| 11 | ☐ 未开始 | | |
+| 11 | ☑ 完成 | 2026-10-24 | 前端基座全量落地：PrimeVue4 Aura definePreset + Toast/Dialog 服务 + 全局错误钩子、契约层（basePath 推断/锁定、401 归一、14 个命名 API）、5 stores（auth/config/logs 全功能 + indexers/search 骨架）、hash 路由 + 会话探针守卫、LoginView（上游 login.html 对等）、仪表盘壳（AppHeader API Key 遮罩/复制/注销、external 安全警告横幅、三下拉筛选 + 计数徽标、双 Tab 占位表、skeleton）、utils/hash；vitest 26 项全过；后端配套：/UI/assets 静态路由、DashboardGet 直出 SPA；浏览器实测登录全链路；澄清记录 13 条 |
 | 12 | ☐ 未开始 | | |
 | 13 | ☐ 未开始 | | |
 | 14 | ☐ 未开始 | | |

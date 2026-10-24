@@ -1,0 +1,6 @@
+[
+  {
+    "method": "GET",
+    "url": "https://example.test/?f=0\u0026c=0_0\u0026s=id\u0026o=desc\u0026q=ubuntu"
+  }
+]

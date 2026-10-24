@@ -1,0 +1,6 @@
+[
+  {
+    "method": "GET",
+    "url": "https://example.test/browse.php?c30=1\u0026c29=1\u0026c28=1\u0026c19=1\u0026search=Some+Show+%F1%E5%E7%EE%ED+1+%F1%E5%F0%B3+2\u0026incldead=1\u0026where=0\u0026sort=4\u0026type=desc"
+  }
+]

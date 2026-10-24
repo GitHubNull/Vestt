@@ -17,7 +17,7 @@
 | 管理会话 | 管理 API + UI 页面 | Cookie `vestt_session`（HttpOnly, SameSite=Lax） | 未启用管理密码时全部放行；启用后未登录访问管理 API → 401 |
 | 匿名 | `/health`、`/UI/Login`、`/UI/TestCookie`、静态资源 | — | — |
 
-Torznab 错误响应统一为：
+Torznab 错误响应统一为（HTTP 状态恒为 200，仅上游 429 例外——整包 429 + `Retry-After`）：
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -28,7 +28,7 @@ Torznab 错误响应统一为：
 |---|---|
 | 100 | Invalid API Key |
 | 201 | Indexer is not specified / not supported / not configured；或请求参数越出索引器能力 |
-| 203 | Function Not Available（能力位不满足 / 非元索引器调用 t=indexers） |
+| 203 | Function Not Available（能力位不满足，如 tvsearch 带 imdbid） |
 | 900 | 通用内部错误（description 含详情）；上游 429 时整包 429 + `Retry-After` 头 |
 
 ---
@@ -186,7 +186,7 @@ Torznab 错误响应统一为：
 
 - `values`：多选数组；`cookie`：Cookie 免密登录通道（`ConfigurationDataCookie` 形态）。
 - 服务端执行：清该索引器缓存 → 应用配置 →（引擎定义含自动测试时）执行测试。
-- 成功 204；登录失败等 → 400 + 错误消息；失败时回滚该索引器为未配置态（上游 ResetBaseConfig 语义）。
+- 成功 204；登录失败等 → 500 + 错误消息；失败时回滚该索引器为未配置态（上游 ResetBaseConfig 语义）。
 
 ### 2.4 `POST /api/v2.0/indexers/{indexerId}/Test`
 
@@ -238,7 +238,8 @@ Torznab 错误响应统一为：
 ### 3.1 手动搜索：`GET /api/v2.0/indexers/{indexerId}/results`
 
 查询参数：`query`、`Tracker[]`（csv，仅元索引器有效）、`Category[]`（csv int）、
-`imdbid`、`tmdbid`、`tvdbid`、`tvmazeid`。`indexerId` 可为具体索引器或 `all`/`aggregate`。
+`imdbid`、`tmdbid`、`tvdbid`、`tvmazeid`。`indexerId` 可为具体索引器、`all`（聚合全部）
+或类型/tag 过滤 id（`public`/`private`/`semi-public`/tag 名）。
 
 响应 200（`ManualSearchResult`）：
 
@@ -246,15 +247,15 @@ Torznab 错误响应统一为：
 {
   "results": [ { "...TrackerCacheResult 全集...": null } ],
   "indexers": [
-    { "ID": "exampletracker", "Name": "Example Tracker", "Status": "OK",
+    { "ID": "exampletracker", "Name": "Example Tracker", "Status": 2,
       "Results": 42, "ElapsedTime": 630, "Error": null },
-    { "ID": "brokenone", "Name": "Broken One", "Status": "Error",
+    { "ID": "brokenone", "Name": "Broken One", "Status": 1,
       "Results": 0, "ElapsedTime": 0, "Error": "Exception: login failed..." }
   ]
 }
 ```
 
-`Status ∈ OK | Error | Unknown`；`results` 按发布时间倒序合并。
+`Status` 为整数：0=Unknown / 1=Error / 2=OK；`results` 按发布时间倒序合并。
 
 ### 3.2 Torznab：`GET /api/v2.0/indexers/{indexerId}/results/torznab/`
 
@@ -265,61 +266,33 @@ Torznab 错误响应统一为：
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<caps>
-  <server version="1.0" title="Vestt" strapline="Vestt indexer proxy" email="" url="https://github.com/vestt/vestt" image="" />
-  <limits max="100" default="100" />
-  <registration available="no" open="no" />
-  <searching>
-    <search available="yes" supportedParams="q" />
-    <tv-search available="yes" supportedParams="q,season,ep,imdbid,tvdbid" />
-    <movie-search available="yes" supportedParams="q,imdbid,tmdbid" />
-    <music-search available="no" supportedParams="" />
-    <book-search available="no" supportedParams="" />
-  </searching>
-  <categories>
-    <category id="2000" name="Movies">
-      <subcat id="2040" name="Movies/HD" />
-    </category>
-  </categories>
-</caps>
+<caps><server title="Vestt" /><limits default="100" max="100" /><searching><search available="yes" supportedParams="q" /><tv-search available="yes" supportedParams="q,season,ep,imdbid,tvdbid,tmdbid" /><movie-search available="yes" supportedParams="q,imdbid,tmdbid" /><music-search available="no" supportedParams="q" /><audio-search available="no" supportedParams="q" /><book-search available="no" supportedParams="q" /></searching><categories><category id="2000" name="Movies"><subcat id="2010" name="Movies/Foreign" />...<subcat id="2040" name="Movies/HD" /></category></categories></caps>
 ```
+
+> 结构逐项对齐上游 `TorznabCapabilities.ToXml`：仅 `server title="Vestt"` 单属性（无
+> version/strapline/registration——backend-api.md 早期草案有误，SPEC-03 已按上游修正）；
+> limits 属性序 default→max；searching 恒含 6 个模式（含上游的 `audio-search`，
+> 与 music-search 同步）；不可用模式仍为 `available="no" supportedParams="q"`；
+> 空类别树输出自闭合 `<categories />`。golden 对拍见 `common/torznab/testdata/`。
 
 **t=search|tvsearch|movie|music|book** 响应（application/rss+xml）：
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<rss version="1.0"
-     xmlns:torznab="http://torznab.com/schemas/2015/feed"
-     xmlns:newznab="http://www.newznab.com/DTD/2010/feeds/attributes/">
-  <channel>
-    <title>Example Tracker</title>
-    <description>This is an example tracker</description>
-    <link>https://example.com/</link>
-    <language>en-US</language>
-    <item>
-      <title>Example Movie 2020 1080p BluRay</title>
-      <guid>https://example.com/t/123</guid>
-      <link>http://127.0.0.1:9117/dl/exampletracker?path=t%2F123.torrent&amp;file=Example.Movie.2020&amp;apikey=...</link>
-      <comments>https://example.com/t/123</comments>
-      <pubDate>Sat, 24 Oct 2026 10:00:00 GMT</pubDate>
-      <size>14680064000</size>
-      <description></description>
-      <enclosure url="..." length="14680064000" type="application/x-bittorrent" />
-      <torznab:attr name="category" value="2000,2040" />
-      <torznab:attr name="seeders" value="88" />
-      <torznab:attr name="peers" value="95" />
-      <torznab:attr name="imdb" value="tt1234567" />
-      <torznab:attr name="downloadvolumefactor" value="0" />
-      <torznab:attr name="uploadvolumefactor" value="1" />
-    </item>
-  </channel>
-</rss>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:torznab="http://torznab.com/schemas/2015/feed"><channel><atom:link href="http://127.0.0.1:9117/api/v2.0/indexers/example/results/torznab/" rel="self" type="application/rss+xml" /><title>Example Tracker</title><description>This is an example tracker</description><link>https://example.com/</link><language>en-US</language><category>search</category><item><title>Example Movie 2020 1080p BluRay</title><guid>https://example.com/t/123</guid><jackettindexer id="example">Example Tracker</jackettindexer><type>private</type><comments>https://example.com/t/123</comments><pubDate>Tue, 20 Oct 2026 18:30:00 +0000</pubDate><size>14680064000</size><grabs>42</grabs><description>A movie</description><link>http://127.0.0.1:9117/dl/example?path=t%2F123&amp;file=Example.Movie.2020&amp;apikey=...</link><category>2000</category><category>2040</category><enclosure url="..." length="14680064000" type="application/x-bittorrent" /><torznab:attr name="category" value="2000" /><torznab:attr name="category" value="2040" /><torznab:attr name="imdb" value="0123456" /><torznab:attr name="imdbid" value="tt0123456" /><torznab:attr name="author" value="" /><torznab:attr name="booktitle" value="" /><torznab:attr name="publisher" value="" /><torznab:attr name="artist" value="" /><torznab:attr name="album" value="" /><torznab:attr name="label" value="" /><torznab:attr name="track" value="" /><torznab:attr name="seeders" value="88" /><torznab:attr name="peers" value="95" /><torznab:attr name="infohash" value="ABC123" /><torznab:attr name="downloadvolumefactor" value="0.5" /><torznab:attr name="uploadvolumefactor" value="1" /></item></channel></rss>
 ```
+
+> 逐项对齐上游 `ResultPage.ToXml`（早期草案中的 newznab 命名空间、`rss version="1.0"`、
+> category 逗号拼接均与上游不符，SPEC-03 已修正）：命名空间为 atom+torznab；
+> channel 首元素 `atom:link rel="self"`；item 含 `jackettindexer`/`type`；
+> 类别同时以 `<category>` 元素与逐条 `torznab:attr` 输出；`imdb` 为 7 位零填充数字、
+> `imdbid` 为 `tt` 前缀；上游对未设置的 author/booktitle/publisher/artist/album/label/track
+> 恒输出空值属性（`value=""`），对拍以 golden 文件为准。
 
 > 属性名/取值细节（imdb 格式、category 拼接、日期 RFC822、magnet 时 link=磁链）以
 > `ResultPage.ToXml` + `TorznabQuery` 上游源码为规范，fixture 对拍验收。
 
-**t=indexers**（仅 `all`/`aggregate`）：
+**t=indexers**（仅元索引器：`all` 及类型/tag 过滤索引器）：
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -382,7 +355,7 @@ Torznab 错误响应统一为：
 | `/` | GET | 302 → `/UI/Dashboard` |
 | `/UI/Login` | GET | Cookie 预检重定向链（`TestCookie`）→ `login.html`（未登录）或 302 Dashboard |
 | `/UI/TestCookie` | GET | 校验 Cookie 支持，缺失 → 400 "Cookies required" |
-| `/UI/Dashboard` | GET | 管理会话校验 → `index.html`（Vue SPA）；`?logout=true` → 302 Logout |
+| `/UI/Dashboard` | GET | 直出 `index.html`（Vue SPA）；会话由前端探测（管理 API 401 → `#/login`）；`?logout=true` → 302 Logout |
 | `/UI/Dashboard` | POST | form 字段 `password` 校验 → 建立会话（14 天）→ 302 Dashboard |
 | `/UI/Logout` | GET | 注销会话 → 302 Login |
 
@@ -407,7 +380,7 @@ SPA 资源（`/js/*`、`/css/*` 等）由静态 handler 服务于 embed 的 `src
 ## 7. 分页、排序与缓存语义
 
 - Torznab `limit/offset`：`limit<=0` 时按索引器最大结果；`offset` 下发上游分页（引擎 paths 翻页）。
-- 缓存键：`sha1(indexerId + normalized query)`；`normalized` = 参数排序后拼接（上游 CacheService 语义）。
+- 缓存键：`SHA-256(JSON(TorznabQuery))`（仅查询对象；空 `SearchTerm` 归一为 `""`）；TTL 秒级（`cache_ttl`）。
 - 缓存命中响应头：`X-Vestt-Cache: hit`（新增提示头，不影响上游兼容）。
 - 手动搜索强制 `InteractiveSearch=true`（对等上游），即绕过 `CanHandleQuery` 的 q 必填约束。
 

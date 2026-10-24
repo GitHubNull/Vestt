@@ -1,0 +1,6 @@
+[
+  {
+    "method": "GET",
+    "url": "https://example.test/api.php?o=json\u0026t=movie\u0026q=Some+Movie\u0026limit=100\u0026offset=0"
+  }
+]

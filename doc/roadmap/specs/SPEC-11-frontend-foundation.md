@@ -92,3 +92,38 @@
 4. `pnpm --dir src/frontend typecheck && pnpm --dir src/frontend test && pnpm --dir src/frontend build` 全绿；
    `make build` 后单二进制自带新 UI（`/UI/Dashboard` 直出）。
 5. 更新 roadmap 进度表。
+
+## 澄清记录
+
+以 tmp/ref 源码（`src/Jackett.Common/Content/`）为准澄清的实现决策：
+
+1. **hash 路由**：后端仅在 `/UI/Dashboard` 直出 SPA（与上游 MVC 一致），应用内
+   路由（`#/login`、`#/dashboard`）用 `createWebHashHistory`；上游式深链 hash
+   （`#indexers=1&filter=private`）由 SPEC-13 的 `utils/hash.ts` 消费。
+2. **`GET /UI/Dashboard` 不再按会话重定向**（`ui_auth.go`）：一律直出 SPA，
+   未登录时由前端探针（`GET server/config` 401 → `#/login`）承接——上游的
+   302→Login→login.html 链对 SPA 不可达，此改动使 `LoginView.vue` 可到达。
+   backend-api.md §5 已回写。
+3. **登录成功判定改为配置探针**（`api.ts loginForm`）：上游靠重定向链落点判定，
+   因澄清 2 落点恒为 Dashboard；改为 POST 后以 `GET server/config` 的
+   200/401 判定会话是否建立。登录失败无任何错误提示（上游 login.html 行为）。
+4. **API Key 面板按 SPEC §3.5 带遮罩切换**；上游为静态 `type=password`
+   输入框（index.html:46），无显隐按钮。
+5. **版本号按 SPEC 置于顶栏**；上游在页脚（index.html:245）。
+6. **external 警告按上游为页内 alert 横幅**（双按钮：稍后提醒 hourglass /
+   不再提示 eye-close），文案逐字保留上游；「不再提示」键名按 SPEC 用
+   `vestt.externalAccessWarningHidden`（上游键 `external-access-warning-hidden`）。
+   触发条件同上游：`external===true && password===''`。
+7. **Logout 按钮仅在有管理密码时显示**（上游 custom.js:140-144 同款逻辑）。
+8. **复制按钮按 SPEC 用 Clipboard API + execCommand fallback**；上游仅
+   execCommand（custom.js:576-611）。成功提示沿用上游文案 "Copied to clipboard!"。
+9. **Toast 适配器对齐 doNotify**（custom.js:939-963）：info/success/danger 三型、
+   5000ms 默认、sticky 对应 autoHide=false、底部居中（App.vue Toast position）。
+10. **筛选区为 SPEC/frontend.md 设计**（类型/标签/状态三下拉 + 计数徽标）；
+    上游是单一 Filter 下拉（test:passed/test:failed、type:*、tag:*，仅列出
+    「部分命中」的项），数据接线在 SPEC-12。
+11. **已配置/未配置双 Tab 为 SPEC 设计**；上游未配置列表在 "Add indexer"
+    弹窗（modal）内（index.html:75-77）。
+12. **PrimeVue Select 空串视为 placeholder**，筛选项用 `'all'` 哨兵值表示「全部」。
+13. **SPA 相对资源解析到 `/UI/assets/*`**（vite base './' 相对 /UI/Dashboard），
+    后端加挂 `/UI/assets/*` 与 `/UI/favicon.svg` 静态路由（server.go）。

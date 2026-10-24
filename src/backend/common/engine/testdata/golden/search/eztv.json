@@ -1,0 +1,9 @@
+[
+  {
+    "method": "GET",
+    "url": "https://example.test/search/Some-Show-S01E02",
+    "headers": {
+      "cookie": "sort_no=100; q_filter=all; q_filter_web=on; q_filter_reality=on; q_filter_x265=on; layout=def_wlinks"
+    }
+  }
+]

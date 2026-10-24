@@ -145,12 +145,16 @@ Vestt/
 SQLite 打开/迁移 → Store 各 DAO
   → SecurityService(bcrypt) → ConfigService(读写 server_config)
   → LogCacheService(ring buffer, 挂 slog handler)
-  → HTTPClient 栈(代理/FlareSolverr/限速)
+  → HTTPClient 栈(代理/FlareSolverr/限速，cookie 变更回调持久化到 indexer_config.cookies_json)
   → Engine(schema 校验 + 582 yml) → IndexerRegistry(内置注册 62 个手写索引器)
   → IndexerManagerService(实例化、加载已配置索引器、元索引器)
   → CacheService(SQLite + 内存索引)
   → HTTP server(chi) 装配全部 handler
 ```
+
+（SPEC-05 落地状态：HTTPClient 栈、IndexerManagerService 与 Cardigann 动态工厂
+（`engine.LoadAll` → 每定义一个 `engine.NewCardigann` 实例）已在 main.go 装配；
+Registry 的 62 个手写索引器随 SPEC-08/09/10 接入。）
 
 ### 4.2 Indexer 接口（上游 IIndexer 等价）
 

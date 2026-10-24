@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<caps><server title="Vestt" /><limits default="100" max="100" /><searching><search available="yes" supportedParams="q" /><tv-search available="no" supportedParams="q" /><movie-search available="no" supportedParams="q" /><music-search available="no" supportedParams="q" /><audio-search available="no" supportedParams="q" /><book-search available="no" supportedParams="q" /></searching><categories /></caps>

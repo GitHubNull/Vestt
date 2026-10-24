@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <item>
+      <title>Example Movie 2023 1080p</title>
+      <category>movie_hd</category>
+      <pubDate>Sat, 14 Sep 2023 07:00:00 +0000</pubDate>
+      <guid>AAAA1111BBBB2222CCCC3333DDDD4444EEEE5555</guid>
+      <size>1610612736</size>
+      <torznab:attr name="seeders" value="15"/>
+      <torznab:attr name="leechers" value="3"/>
+    </item>
+    <item>
+      <title>Example Show S01E01 720p</title>
+      <category>tv_show</category>
+      <pubDate>Sun, 15 Sep 2023 08:00:00 +0000</pubDate>
+      <guid>FFFF6666AAAA7777BBBB8888CCCC9999DDDD0000</guid>
+      <size>734003200</size>
+      <torznab:attr name="seeders" value="9"/>
+      <torznab:attr name="leechers" value="1"/>
+    </item>
+  </channel>
+</rss>

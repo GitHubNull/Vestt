@@ -133,3 +133,37 @@ func parseResponse(resp httpclient.Result, chain *PageChain, q *models.TorznabQu
 4. **全量定义可执行性**：582 个定义全部能构造 caps + 生成搜索请求（SPEC-05 请求单测在
    引擎收口后自动扩展到全量：跑一遍"请求生成"断言无 panic/无空 URL）。
 5. 引擎回归时长 < 60s（CI 可承受）；`make test` 全绿；更新 roadmap 进度表。
+
+## 澄清记录
+
+以 tmp/ref 源码为准澄清的实现决策（验收过程中逐条核实）：
+
+1. **date 字段解析失败即整行丢弃（HTML）/请求失败（JSON）** —— 上游
+   `CardigannIndexer.cs:2331-2334` 的 `case "date":` 无 try/catch，
+   `DateTimeUtil.FromUnknownParse` 抛异常向上传播。本实现令 `parseFields`
+   返回 error：HTML 行解析时丢弃该行，JSON 解析时使请求失败（与上游一致）。
+2. **`.NET` 日期布局翻译**：Go `strings.NewReplacer` 对同起点并列项按**参数顺序**
+   取先出现者，故 token 对按最长优先排列（`yyyy`→`2006` 在 `yy` 之前、`MMMM`→`January`
+   在 `MMM`→`Jan` 之前），否则 `yyyy`/`MMMM` 会被 `yy`/`MMM` 抢匹配。
+   单字母 `d`/`h` 同时补 `2`/`3`（Go 布局无等价单字母日/时 token）。
+3. **无时区冒号的偏移量**（如 `+0200`）：`Z07:00` 布局拒绝无冒号形式，故
+   `ParseDateTimeGoLang` 在含 `Z07:00` 布局失败时回退以 `-0700` 重试。
+4. **JSON 字段中的日期字符串**（Newtonsoft `DateParseHandling.DateTime`）：
+   JSON.NET 将 ISO-8601 形字符串转为 DateTime token，插值时按不变区域性输出
+   `MM/dd/yyyy HH:mm:ss`（如 `"2019-03-31T00:00:00+02:00"` →
+   `"03/31/2019 00:00:00"`）。本实现以 `jsonIsoDateRe` 识别并
+   `tryDotnetDateToken` 模拟（多布局尝试）。
+5. **`:contains()` 选择器组合**：AngleSharp 原生支持 `:contains`，goquery/cascadia
+   不支持，故 `querySelectorAll` 先按顶层逗号分组（`splitSelectorGroups`），
+   每组内逐复合选择器过滤、按节点去重取并集；组内 `>`/`+`/`~` 组合子退化为
+   后代匹配（近似，已用 20 定义对拍确认无回归）。
+6. **`.NET` 正则语义**：Go RE2 不支持后行断言/Unicode `\w`/`.NET` 组引用替换，
+   故 `regexp`/`re_replace` 滤镜改用 `dlclark/regexp2` 获得 .NET 兼容语义。
+   上游 `regexp` 滤镜恒取 `Groups[1].Value`（`CardigannIndexer.cs:1141-1153`），
+   无捕获组时 .NET 抛 ArgumentOutOfRange → 数据置空；`re_replace` 以
+   .NET `Regex.Replace` 语义执行替换。
+   副作用：`.NET` `\w` 覆盖 Unicode（含西里尔字母），mazepa golden 中
+   乌克兰语关键词被 `keywordsfilters` 以 `+词` 连接——与上游输出逐字符一致，
+   golden 已按此更新。
+7. **filters 文档表与上游 27 个滤镜名对齐**（上游 `CardigannIndexer.cs:1114-1275`）；
+   实现全覆盖，文档表为准。

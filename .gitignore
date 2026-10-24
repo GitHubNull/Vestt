@@ -1,6 +1,7 @@
 # ---- 构建产物 ----
 dist/
 src/backend/server/static/dist/
+!src/backend/server/static/dist/.gitkeep
 
 # ---- 前端（src/frontend/）----
 src/frontend/node_modules/

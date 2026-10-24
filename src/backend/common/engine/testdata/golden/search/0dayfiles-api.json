@@ -1,0 +1,9 @@
+[
+  {
+    "method": "GET",
+    "url": "https://example.test/api/torrents/filter?categories[]=21\u0026categories[]=22\u0026categories[]=23\u0026categories[]=25\u0026categories[]=26\u0026categories[]=28\u0026categories[]=29\u0026categories[]=30\u0026categories[]=31\u0026categories[]=32\u0026categories[]=59\u0026categories[]=43\u0026categories[]=48\u0026name=Some+Show+S02E03\u0026seasonNumber=2\u0026episodeNumber=3\u0026sortField=created_at\u0026sortDirection=desc\u0026perPage=100",
+    "headers": {
+      "Authorization": "Bearer "
+    }
+  }
+]

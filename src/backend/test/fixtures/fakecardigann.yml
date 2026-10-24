@@ -1,0 +1,54 @@
+---
+id: fakecardigann
+name: Fake Cardigann
+description: "Cardigann engine fixture for SPEC-07 integration tests"
+language: en-US
+type: public
+encoding: UTF-8
+links:
+  - https://fake.example/
+
+caps:
+  categorymappings:
+    - {id: 1, cat: Movies/HD, desc: "Movies/HD"}
+  modes:
+    search: [q]
+    movie-search: [q, imdbid]
+
+settings: []
+
+search:
+  paths:
+    - path: api/search
+      response:
+        type: json
+
+  inputs:
+    q: "{{ .Keywords }}"
+
+  rows:
+    selector: data
+    attribute: attributes
+
+  fields:
+    category:
+      selector: category_id
+    title:
+      selector: name
+    details:
+      selector: details_link
+    download:
+      selector: download_link
+    seeders:
+      selector: seeders
+    leechers:
+      selector: leechers
+    date:
+      selector: created_at
+      filters:
+        - name: append
+          args: " +00:00"
+        - name: dateparse
+          args: "MM/dd/yyyy HH:mm:ss zzz"
+    size:
+      selector: size

@@ -1,0 +1,18 @@
+[
+  {
+    "method": "GET",
+    "url": "https://example.test/sort-search/Some%20Show%202023/time/desc/1/"
+  },
+  {
+    "method": "GET",
+    "url": "https://example.test/sort-search/Some%20Show%202023/time/desc/2/"
+  },
+  {
+    "method": "GET",
+    "url": "https://example.test/sort-search/Some%20Show%202023/time/desc/3/"
+  },
+  {
+    "method": "GET",
+    "url": "https://example.test/sort-search/Some%20Show%202023/time/desc/4/"
+  }
+]

@@ -1,0 +1,6 @@
+[
+  {
+    "method": "GET",
+    "url": "https://movies-api.accel.li/api/v2/list_movies.json?query_term=Some+Movie\u0026limit=50\u0026sort_by=date_added\u0026order_by=desc"
+  }
+]

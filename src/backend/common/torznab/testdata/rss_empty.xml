@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:torznab="http://torznab.com/schemas/2015/feed"><channel><atom:link href="http://127.0.0.1:9117/api/v2.0/indexers/example/results/torznab/" rel="self" type="application/rss+xml" /><title>Example Tracker</title><description>This is an example tracker</description><link>https://example.com/</link><language>en-US</language><category>search</category></channel></rss>

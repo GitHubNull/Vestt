@@ -42,6 +42,10 @@ make build        # 构建前端 + 产出 dist/vestt 单二进制
 
 常用参数：`--port`、`--data-dir`、`--basepathoverride`、`--loglevel`（info|debug）。
 
+参数优先级：`--port` / `--basepathoverride` / `--loglevel` 为**当次运行覆盖** ——
+优先级 `flag > 数据库配置 > 默认值`，flag 的变更**不会写回**数据库，重启后仍按数据库配置生效；
+`--data-dir` 决定 SQLite 库与日志目录位置（默认：平台用户配置目录下的 `vestt/`）。
+
 ### Docker
 
 ```bash

@@ -1,0 +1,33 @@
+{
+  "response": {"total": 2},
+  "item": [
+    {
+      "category": "1,2000",
+      "year": "2023",
+      "codec": "x264",
+      "container": "mkv",
+      "media": "WEB",
+      "resolution": "1080p",
+      "audioFormat": "AAC",
+      "subbing": "",
+      "flags": "",
+      "language": "",
+      "releaseGroup": "GRP",
+      "title": "Example Movie",
+      "guid": "https://anthelion.me/torrents.php?id=12345",
+      "link": "https://anthelion.me/torrents/download.php?id=12345",
+      "infohash": "AAAA1111BBBB2222CCCC3333DDDD4444EEEE5555",
+      "imdb": "tt1234567",
+      "tmdb": 123456,
+      "tags": "action.drama",
+      "fileCount": 3,
+      "seeders": 15,
+      "leechers": 3,
+      "grabs": 100,
+      "pubDate": "2022-08-07T20:56:06+0200",
+      "size": 1610612736,
+      "downloadvolumefactor": "1",
+      "uploadvolumefactor": "1"
+    }
+  ]
+}

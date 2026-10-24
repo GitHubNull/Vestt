@@ -1,0 +1,6 @@
+[
+  {
+    "method": "GET",
+    "url": "https://example.test/torrents.php?incldead=0\u0026spstate=0\u0026inclbookmarked=0\u0026approval_status=\u0026trackerStatus=\u0026search=\u0026search_area=0\u0026search_mode=0\u0026sort=4\u0026type=desc"
+  }
+]

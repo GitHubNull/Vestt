@@ -116,3 +116,40 @@ type Item interface {
    `GET Config` 回显值一致 → Test 更新 state → Delete 后 config 表行为空、caps 查询不可见。
 6. **DTO 形状**：ConfigData → JSON golden 对拍（8 种 item type 各 1 例）。
 7. `make test` 全绿；更新 roadmap 进度表。
+
+## 澄清记录
+
+实现期间以下行为以上游源码为准澄清（2026-10-24）：
+
+1. **空代理 URL guard**（`tmp/ref/.../Utils/Clients/WebClient.cs InitProxy`）：`ProxyType=disabled`
+   或代理 URL 为空 → 直连。Go 零值 `Config` 的 `ProxyType=0` 若不做此 guard 会被
+   `http.ProxyURL("http://")` 静默退化为拨号 80 端口（本地测试时把请求发给 127.0.0.1:80）。
+   `buildTransport` 已按上游语义 guard；手写索引器禁止绕过。
+2. **EmulateBrowser 三态**：上游默认 `true`（可空）。Go 侧用 `*bool`（nil=emulate），
+   避免零值 false 改变默认行为。Base.Download 显式传 `Bool(true)`（上游
+   `BaseWebIndexer.Download` 里 `EmulateBrowser = true`）。
+3. **Base 必须匿名嵌入**：Go 方法提升只对匿名字段生效。`meta.Aggregate` 曾用
+   命名字段 `Base indexer.Base` 导致接口方法集为空（编译期 "does not implement"）。
+   所有手写索引器（SPEC-08~10）一律 `indexer.Base` 匿名嵌入。
+4. **Cookie 渠道别名**：前端/下游 POST 的 `ConfigItem.Cookie` 字段作为该 item 的
+   value 应用（上游 cardigann cookie 登录即写入 cookieheader item value）。
+5. **BoolItem.FromJSON 接受字符串**：上游 `Value<bool>()`（Newtonsoft）把字符串
+   `"true"` 转 bool；Go `encoding/json` 不做该转换，FromJSON 显式兼容 `"true"/"1"`
+   （posted ConfigItem 的 value 一律是字符串）。
+6. **Init 锁序**：`Init` 持写锁期间不得调用 `configuredMembers`（内部 RLock → 自死锁）。
+   aggregate 在释放锁后构建、再回写（竞争窗口无害：Init 完成前管理器不可用）。
+7. **ConfigureIndexer 落库顺序**：apply 成功立即 `SaveConfig`，再按需自测。上游
+   在 `ApplyConfiguration` 期间即保存（`ConfigureIfOK` → `SaveConfig`），测试的 state
+   写入必须看到已存在的 config 行。
+8. **state 行生命周期跟随 config 行**：`setState` 遇到无 config 行（从未配置/已删除）
+   时不创建 state 行，仅更新内存 LastError（上游无独立 state 存储，LastError 存于
+   configData；`state` 列是本项目 data-model §2.4 的仪表盘设计）。
+9. **重试语义**（上游 Polly `RetryStrategy`）：5xx/408/异常可重试（2 次、2s 基数、
+   指数+jitter 0.5~1.5×）；重试耗尽后**返回最后一次响应**（Polly 返回最后 outcome
+   而非抛错）。429/CF 挑战/site-down 不可重试，直接映射 IndexerError
+   （Kind=RateLimit/Auth/Network）。初版 doOnce 把 retriable 标志挂在 nil err 上被
+   Do 忽略，已修。
+10. **cookie jar 路径归一**：origin-form 请求的根路径为空字符串，jar 匹配前归一为
+    "/"，否则 FlareSolverr 注入的 `cf_clearance`（path=/）不会随重放请求携带。
+11. **限速器语义**：整调用持有索引器互斥锁（同索引器请求完全串行，突发上限 1），
+    `IsTest` 请求用独立短间隔（`TestRequestDelay`）。

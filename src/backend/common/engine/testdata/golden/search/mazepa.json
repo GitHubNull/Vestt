@@ -1,0 +1,10 @@
+[
+  {
+    "method": "POST",
+    "url": "https://example.test/tracker.php",
+    "headers": {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    "body": "f%5B%5D=38\u0026f%5B%5D=8\u0026f%5B%5D=36\u0026f%5B%5D=6\u0026f%5B%5D=39\u0026f%5B%5D=9\u0026f%5B%5D=152\u0026f%5B%5D=44\u0026f%5B%5D=14\u0026f%5B%5D=43\u0026f%5B%5D=11\u0026f%5B%5D=16\u0026f%5B%5D=157\u0026f%5B%5D=42\u0026f%5B%5D=15\u0026f%5B%5D=20\u0026f%5B%5D=188\u0026f%5B%5D=167\u0026f%5B%5D=79\u0026f%5B%5D=21\u0026f%5B%5D=75\u0026f%5B%5D=77\u0026f%5B%5D=189\u0026f%5B%5D=47\u0026f%5B%5D=46\u0026f%5B%5D=48\u0026f%5B%5D=182\u0026f%5B%5D=49\u0026f%5B%5D=53\u0026f%5B%5D=19\u0026f%5B%5D=30\u0026prev_allw=1\u0026prev_a=0\u0026prev_dla=0\u0026prev_dlc=0\u0026prev_dld=0\u0026prev_dlw=0\u0026prev_my=0\u0026prev_new=0\u0026prev_sd=0\u0026prev_da=1\u0026prev_dc=0\u0026prev_df=1\u0026prev_ds=0\u0026prev_tor_type=0\u0026o=1\u0026s=2\u0026dc=0\u0026df=1\u0026da=1\u0026ds=0\u0026tm=-1\u0026sns=-1\u0026srg=-1\u0026nm=%2BSome+%2BShow+%2B%D1%81%D0%B5%D0%B7%D0%BE%D0%BD+%2B1+%2B%D1%81%D0%B5%D1%80%D1%96+%2B2\u0026allw=1"
+  }
+]

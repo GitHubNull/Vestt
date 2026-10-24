@@ -71,7 +71,8 @@
 
 ### 3.5 元索引器收口（`src/backend/common/indexer/meta`）
 
-- `all`：全部索引器；`aggregate`：全部**已配置**索引器。
+- 对外只有 `all`（AggregateIndexer，成员为全部注册索引器）；类型过滤
+  （`public`/`private`/`semi-public`）与 tag 过滤索引器按 FilterFunc 动态生成。
 - `CanHandleQuery`：目标集合中任一支持即支持；扇出前逐个过滤（Fallbacks/ResultFilters 语义对照）。
 - `t=indexers`、`Tracker[]`、`configured` 参数全覆盖。
 
@@ -104,3 +105,50 @@ backend-api.md §2、§3、§4 全部端点在本 SPEC 交付（§1、§5、§6 
 3. **缓存一致性**：配置变更/删除索引器后 `Cache` 视图对应行消失。
 4. 性能抽查：fixture 索引器扇出 50 个并发 → P95 < 500ms（本机无网络延迟基线）。
 5. `make test` 全绿；更新 roadmap 进度表。
+
+## 澄清记录
+
+以 tmp/ref 源码为准澄清的实现决策（验收过程中逐条核实）：
+
+1. **缓存键与 TTL**（上游 `CacheService.cs`）：键 = `SHA-256(JSON(TorznabQuery))`
+   （仅查询对象，不含索引器 id/类别参数）；JSON 序列化时空 `SearchTerm` 归一为 `""`；
+   TTL 单位为**秒**（`CacheTTL=2100`）。SPEC §1.1 草稿的 sha1(id+query+cats)/分钟口径作废。
+2. **Tracker 字段在缓存层填充**：`GetCachedResults` 时由 TrackerCache 条目写入
+   `Tracker/TrackerId/TrackerType`（CacheResults 时从索引器对象捕获），API 层不填；
+   `TrackerCacheResult` 不含 Languages/Subs（上游 DTO 即如此）。
+3. **torznab 路径错误语义**：一律 HTTP 200 + XML 错误文档（code 100 无 apikey /
+   201 参数与配置类 / 203 能力不支持），仅上游 429 → HTTP 429 + `Retry-After` +
+   XML code 900。SPEC §5 验收矩阵写的 401/404/400 状态码作废。
+4. **未知索引器在过滤器链内抛异常 → HTTP 500**（results/admin API 全部）；
+   仅 `/dl` 捕获后 404、`/img` 捕获后 500、`/bh` 走 JSON error。SPEC §5 的 404 口径作废。
+5. **`POST /{id}/Config` 失败 → 500**（上游 action 无错误映射，异常冒泡）。
+   backend-api.md §2 的 400 口径已回写为 500。
+6. **手动搜索 `Indexers[].Status` 序列化为整数**：0=unknown / 1=error / 2=OK；
+   状态条目与请求 tracker 列表 zip（不信任 result.Indexer）。backend-api.md §3.1
+   的字符串 "OK" 口径已回写为整数。
+7. **无 `aggregate` 这个 id**：上游 `GetWebIndexer` 只特判 `"all"`
+   （IndexerManagerService.cs:312）+ FilterFunc 动态过滤索引器。SPEC §3.5 已修正。
+8. **`t=indexers` 在非元索引器上 → code 201**（`RequiresValidQuery` 先跑
+   `CanHandleQuery`，BaseIndexer.cs:275 对 "indexers" 查询类型返回 false）；
+   "this isn't a meta indexer"（203）分支对基础索引器不可达，仅为上游原样保留。
+9. **两个 ConfigureCacheResults 变体**：IndexerApiController（Cache 视图）**无**
+   MagnetUri 回退，blackhole 门控用**原始** Link 的 scheme != magnet；
+   ResultsController（手动搜索）**有** MagnetUri 回退并检查**代理后**的 Link。
+   两者 `file = MakeValidFileName(title, '_', false)`。
+10. **bencode 重编码**：BencodeNET 的 Parse/EncodeAsBytes 行为移植为
+    `common/utils/bencode` 规范编码器（字典键 bytewise 排序）；解析失败 →
+    记录内容日志 + 404（上游 `DownloadController.cs`）。
+11. **`MakeValidFileName` 的非法字符集取 .NET Unix 口径**（`Path.GetInvalidFileNameChars()`
+    = NUL 与 `/`，见 stringutil.go:12）：空格等保留，文件名可出现空格；
+    代理端点写入前另有防御性清洗。
+12. **`UncleanLink`/downloadUrlBase 未移植**：上游 `DownloadImage` 的链接反清洗
+    依赖 Jackett 全局保护服务，Vestt 无此层；`Base.DownloadImage` 直接
+    `client.Do`（Referer=SiteLink、索引器 Cookie、EmulateBrowser）。
+13. **Potato 代理用 `CurrentIndexer.Id`**（非 release 来源索引器）；potato 动作
+    无错误映射——失败直接 500。`size` 单位 MiB（Size/1024/1024），
+    `leechers = (Peers ?? -1) - (Seeders ?? 0)`。
+14. **chi 路由注册**：上游 ASP.NET `{ignored?}` 容忍尾斜杠，故 torznab/potato/
+    dl/img/bh 均注册 `/x` 与 `/x/`（+ `{ignored}`）两种拼写。
+15. **429 路径**：httpclient 遇站点 429 返回 `TooManyRequests{RetryAfter}`，
+    Base 包装为 `IndexerError{KindRateLimit}`，torznab 动作映射为
+    429 + Retry-After + XML code 900。

@@ -1,0 +1,29 @@
+{
+  "data": [
+    {
+      "type": "torrents",
+      "id": "1",
+      "attributes": {
+        "category_id": 18,
+        "name": "Example Release 2023 1080p",
+        "num_file": 3,
+        "details_link": "https://0dayfiles.test/torrents/123",
+        "download_link": "https://0dayfiles.test/torrents/download/123",
+        "meta": {"poster": "https://0dayfiles.test/img/poster.jpg", "genres": "Action & Adventure"},
+        "imdb_id": "tt1234567",
+        "tmdb_id": 123456,
+        "tvdb_id": 654321,
+        "internal": false,
+        "seeders": 10,
+        "leechers": 2,
+        "times_completed": 99,
+        "created_at": "2021-10-18T00:34:50.000000Z",
+        "size": 1610612736,
+        "featured": false,
+        "freeleech": "25%",
+        "double_upload": false,
+        "files": [{"name": "rld-example.r00"}]
+      }
+    }
+  ]
+}

@@ -132,3 +132,33 @@ CardigannIndexer 实现 indexer.Indexer（SPEC-04 §3.1）
 6. **caps**：10 个定义的 caps 输出对拍（categories 树 + searching 支持位 + imdb/tmdb 位）。
 7. 抽样 5 个真实 yml 走 `Configure → GET config`：字段顺序/类型/默认值与上游 UI 展示一致。
 8. `make test` 全绿；更新 roadmap 进度表。
+
+## 澄清记录
+
+实现期间以 tmp/ref/Jackett-0.24.2900 源码为准核对行为，SPEC 原文的以下
+推测与上游不符（按 AGENTS.md §5 记录）：
+
+1. **无 `search.before` 块**：上游 `searchBlock`/`searchPathBlock` 均无 before
+   字段（`Models/IndexerDefinition.cs`）；before 仅存在于 `downloadBlock`。
+2. **无 `keywordsall`**：全仓库检索无该字段；keyword token 固定为
+   Q/Series/Movie/Year + Episode（`CardigannIndexer.cs` PerformQuery 1494-1511）。
+3. **无分页**：`searchPathBlock` 无 Progress 字段，PerformQuery 只做单页请求。
+4. **GET querystring 不编码 key，POST body 双编码 key 与 value**：
+   GET 走 `StringUtil.GetQueryString`（key 原样）；POST 走 WebClient
+   `FormUrlEncodedContentWithEncoding`（key、value 均经 UrlEncode，故 `$raw`
+   值在模板修饰符 UrlEncode 之后会被二次编码，如空格 → `+` → `%2B`）。
+   已按上游原样复刻（见 requests_test.go TestSearchPostEncoding）。
+5. **keyword token 顺序**：Q, Series, Movie, Year，其后追加 Episode（Year 在
+   Episode 之前）。
+6. **Go http.Client 自动跟随重定向**（最多 5 次），覆盖上游
+   `FollowIfRedirect`/`HandleRedirectableRequestAsync` 的常规路径；跨域
+   `followredirect` 提示逻辑仅保留在 testLogin。
+7. **`categories: ["!", ...]` 语义**：首元素为 `"!"` 时路径在**无交集**时命中
+   （排除式路径）。当前 582 份 YAML 无一在 search path 使用 `"!"`，该分支
+   由合成定义单测覆盖（requests_test.go TestSearchCategoryNegation）。
+8. **FromFuzzyTime 近似**：上游 `DateTimeRoutines` 的 usa/uk 日期推断以
+   Go layout 列表近似（dateutil.FromUnknown），输出不一致的场景登记为
+   已知限制。
+9. **Download 的 Infohash 成功路径不传 headers**（上游即如此，headers 变量
+   在 base.Download 调用处未传入）；Infohash 异常与 selectors 逐条异常均
+   记录日志并回落/继续，与上游 try/catch 行为一致。

@@ -1,0 +1,28 @@
+[
+  {
+    "id": 111,
+    "category": "200",
+    "name": "Example Show S01E01 1080p",
+    "info_hash": "AAAA1111BBBB2222CCCC3333DDDD4444EEEE5555",
+    "imdb": "tt1234567",
+    "added": 1694671200,
+    "size": 1610612736,
+    "num_files": 5,
+    "seeders": 15,
+    "leechers": 3,
+    "username": "upuser"
+  },
+  {
+    "id": 222,
+    "category": "205",
+    "name": "Example Movie 2020 720p",
+    "info_hash": "FFFF6666AAAA7777BBBB8888CCCC9999DDDD0000",
+    "imdb": "tt7654321",
+    "added": 1694678400,
+    "size": 734003200,
+    "num_files": 1,
+    "seeders": 8,
+    "leechers": 1,
+    "username": "movieguy"
+  }
+]

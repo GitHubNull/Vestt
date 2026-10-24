@@ -1,0 +1,55 @@
+{
+  "data": {
+    "movie_count": 2,
+    "movies": [
+      {
+        "id": 12345,
+        "title": "Example Movie",
+        "title_long": "Example Movie (2023)",
+        "year": 2023,
+        "imdb_code": "tt1234567",
+        "url": "https://yts.mx/movies/example-movie-2023",
+        "large_cover_image": "https://yts.mx/img/cover.jpg",
+        "torrents": [
+          {
+            "quality": "1080p",
+            "type": "web",
+            "audio_channels": "5.1",
+            "bit_depth": "10",
+            "video_codec": "x264",
+            "seeds": 15,
+            "peers": 3,
+            "size_bytes": 1610612736,
+            "url": "https://yts.mx/torrent/download/AAAA1111",
+            "hash": "AAAA1111BBBB2222CCCC3333DDDD4444EEEE5555",
+            "date_uploaded_unix": 1694671200
+          }
+        ]
+      },
+      {
+        "id": 67890,
+        "title": "Other Film",
+        "title_long": "Other Film (2020)",
+        "year": 2020,
+        "imdb_code": "tt7654321",
+        "url": "https://yts.mx/movies/other-film-2020",
+        "large_cover_image": "https://yts.mx/img/cover2.jpg",
+        "torrents": [
+          {
+            "quality": "720p",
+            "type": "bluray",
+            "audio_channels": "2.0",
+            "bit_depth": "8",
+            "video_codec": "x264",
+            "seeds": 8,
+            "peers": 1,
+            "size_bytes": 734003200,
+            "url": "https://yts.mx/torrent/download/BBBB2222",
+            "hash": "FFFF6666AAAA7777BBBB8888CCCC9999DDDD0000",
+            "date_uploaded_unix": 1600000000
+          }
+        ]
+      }
+    ]
+  }
+}

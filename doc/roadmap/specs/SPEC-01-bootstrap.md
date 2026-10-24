@@ -129,3 +129,20 @@ clean:
 4. `go vet` / `gofmt` 无输出；`make test` 通过（当前为占位测试包）。
 5. 目录结构与 [architecture.md §2](../../tech/architecture.md) 完全一致（复核清单走查）。
 6. 更新 `doc/roadmap/roadmap.md` 进度表（SPEC-01 → 完成）。
+
+## 澄清记录
+
+1. **Makefile `-o` 路径修正**：`go build -C src/backend` 之后 `-o` 相对路径基于
+   `src/backend/`，原 `-o ../$(BIN_DIR)/vestt` 会产出到 `src/dist/`；已改为
+   `-o ../../$(BIN_DIR)/vestt`。
+2. **lint 目标 POSIX 兼容**：原 `gofmt -l $(BACKEND) | tee /dev/stderr | (! read)`
+   在 make 默认 `/bin/sh`（dash）下报 `read: arg count`；改为等价的
+   `files=$$(gofmt -l ...); [ -n ] && exit 1` 判断，语义不变（有未格式化文件即失败）。
+3. **vite proxy 配置合法化**：原 `'/dl|/img|/bh|/health': '...'` 单键不是 Vite
+   合法 proxy key（不会按正则拆分）；拆为 `/dl`、`/img`、`/bh`、`/health` 四个独立键，
+   目标一致。
+4. **.gitkeep 例外**：`.gitignore` 忽略整个 `src/backend/server/static/dist/`，
+   追加 `!src/backend/server/static/dist/.gitkeep` 使占位文件可提交（SPEC 要求）。
+5. **依赖版本锁定**：`primevue` 锁定 4.x（`^4.5.5`，对齐文档基线 PrimeVue 4）；
+   `@primeuix/themes` 走独立版本线装 `^3.1.0`；`vite@8`、`vue-router@5`、`pnpm@10`
+   为 2026-10 当前主版本，与文档"Node ≥ 20、pnpm ≥ 9"约束兼容。

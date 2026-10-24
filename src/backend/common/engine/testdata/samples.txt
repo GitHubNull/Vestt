@@ -1,0 +1,23 @@
+# SPEC-06 acceptance #3: sampled end-to-end definitions.
+# Coverage: public/private, HTML/JSON/XML responses, freeleech/leech markers,
+# windows-1251 encoding, POST paths, categorydesc, magnet/imdb, dateheaders.
+1337x            # public, HTML, multi-path, text-template title
+eztv             # public, HTML, andmatch rows filter, magnet download
+limetorrents     # public, HTML, categorydesc
+torrentdownloads # public, HTML
+kickasstorrents-ws # public, HTML, :has rows selector
+nyaasi           # public, HTML, categorydesc multiple categories
+azusa            # private, HTML
+mazepa           # private, HTML, POST, freeleech case
+0daykiev         # windows-1251, HTML, errorblock
+bjshare          # private, HTML, freeleech image case
+yts              # public, JSON API, imdb/tmdb ids
+thepiratebay     # public, JSON API, :has/:not rows filters
+acgrip           # public, JSON
+anthelion-api    # private, JSON API
+0dayfiles-api    # private, JSON API, music/book modes
+bitmagnet        # public, JSON
+animetosho-xyz   # public, XML
+anibt            # private, XML
+boxingtorrents   # private, HTML, dateheaders
+bigcore          # private, HTML, rows after merge

@@ -1,0 +1,6 @@
+[
+  {
+    "method": "GET",
+    "url": "https://example.test/torrents.php?filter_cat[2]=1\u0026filter_cat[8]=1\u0026filter_cat[13]=1\u0026filter_cat[14]=1\u0026searchstr=Some+Show\u0026order_by=time\u0026order_way=desc\u0026action=basic\u0026searchsubmit=1"
+  }
+]

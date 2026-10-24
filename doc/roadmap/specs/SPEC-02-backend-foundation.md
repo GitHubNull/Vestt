@@ -105,3 +105,23 @@ flags 覆盖配置的优先级 = flag > DB 配置 > 默认值（flag 变更不�
      POST /UI/Dashboard（password）→ Set-Cookie → 再访问 200。
    - `POST /api/v2.0/server/shutdown?apikey=...` 进程退出码 0；错误 apikey → 401。
 3. `make test` 全绿；更新 roadmap 进度表。
+
+## 澄清记录
+
+1. **proxy_type 默认值订正**：`data-model.md` §2.2 原写"默认 0（disabled）"；上游
+   `ProxyType.cs` 枚举 `Disabled = -1`（Http=0、Socks4=1、Socks5=2），与
+   `backend-api.md` §1.1 的 `"-1"` 一致。已修正 data-model.md 为 `-1`，
+   实现按 `-1` 默认。
+2. **UI 重定向为相对 Location**：上游 MVC `Redirect("TestCookie")` 等产生相对
+   Location 头；Go `http.Redirect` 会 absolutise 为 `/UI/TestCookie`。为逐字节对齐
+   上游行为，`ui_auth.go` 改用 `redirect(w, "TestCookie")` 手写相对 302。
+3. **代理变更清缓存**：上游 `cacheService.CleanCache()` 在代理配置变更时清空结果
+   缓存；缓存服务属 SPEC-07，当前以日志提示占位（代码内 TODO 标注）。
+4. **flags 不回写 DB**：`ConfigService.OverrideRuntime` 只做内存覆盖并复用 Apply 的
+   校验规则；`--port`/`--basepathoverride` 持久化仍走 POST /server/config。
+5. **`--loglevel` 语义**：flag 覆盖当次运行日志级别；数据库无对应持久化字段
+   （`logging` 开关对应 enhanced logging，经 POST /server/config 持久化并运行时
+   切换 slog 级别）。
+6. **`/api/v2.0/indexers` 尚不存在**：SPEC-02 验收以"受保护端点 401 先行"为准，
+   实测对 `/api/v2.0/server/config` 验证 RequireSession 中间件（集成测试
+   TestAdminPasswordFlow 覆盖）。

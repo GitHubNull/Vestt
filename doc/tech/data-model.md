@@ -60,7 +60,7 @@ CREATE TABLE server_config (
 | flaresolverr_url | text | "" |
 | flaresolverr_max_timeout | int | 60000 |
 | omdb_api_key / omdb_api_url | text | "" |
-| proxy_type | int | 0（disabled） |
+| proxy_type | int | -1（disabled，上游枚举 `ProxyType.Disabled = -1`） |
 | proxy_url / proxy_username / proxy_password | text | "" |
 | proxy_port | int/null | null |
 

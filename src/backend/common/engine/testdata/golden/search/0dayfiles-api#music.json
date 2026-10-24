@@ -1,0 +1,9 @@
+[
+  {
+    "method": "GET",
+    "url": "https://example.test/api/torrents/filter?sortField=created_at\u0026sortDirection=desc\u0026perPage=100",
+    "headers": {
+      "Authorization": "Bearer "
+    }
+  }
+]
