@@ -66,7 +66,8 @@ export interface IndexerDTO {
   caps: IndexerCapability[]
 }
 
-// §2.2 dynamic config form description (ConfigurationData.ToJson shape)
+// §2.2 dynamic config form description (ConfigurationData.ToJson shape);
+// inputtags is emitted in addition to the documented 8 (Tags field).
 export type ConfigFieldType =
   | 'inputstring'
   | 'password'
@@ -74,6 +75,7 @@ export type ConfigFieldType =
   | 'inputbool'
   | 'inputcheckbox'
   | 'inputselect'
+  | 'inputtags'
   | 'displayinfo'
   | 'displayimage'
 
@@ -81,7 +83,8 @@ export interface ConfigFieldDef {
   id: string
   type: ConfigFieldType
   name: string
-  value?: string
+  /** inputbool serializes a JSON boolean; everything else a string. */
+  value?: string | boolean
   values?: string[]
   options?: Record<string, string>
 }

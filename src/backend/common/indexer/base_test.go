@@ -677,3 +677,23 @@ func TestDownloadResolveHook(t *testing.T) {
 		t.Fatalf("body: %q", body)
 	}
 }
+
+// TestConfigurationForSetupPrefillsSiteLink: the setup form shows the
+// default site link for an unconfigured indexer (upstream behavior;
+// the stored value only exists after the first LoadValuesFromJSON).
+func TestConfigurationForSetupPrefillsSiteLink(t *testing.T) {
+	b := newTestBase(nil)
+	form, err := b.ConfigurationForSetup(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(form) == 0 {
+		t.Fatal("empty setup form")
+	}
+	if form[0]["id"] != "sitelink" {
+		t.Fatalf("first item = %v, want sitelink", form[0]["id"])
+	}
+	if got := form[0]["value"]; got != "https://example.com/" {
+		t.Fatalf("sitelink value = %v, want default link", got)
+	}
+}

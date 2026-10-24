@@ -21,6 +21,18 @@ export interface ApiError {
 
 let basePath = ''
 let basePathLocked = false
+let apiKey = ''
+
+/** Pins the API key from the server config (upstream api.js appends
+ *  `?apikey=` to the manual-search request, custom.js getResults). */
+export function lockApiKey(key: string): void {
+  apiKey = key
+}
+
+/** Returns the pinned API key (empty before the first config load). */
+export function getApiKey(): string {
+  return apiKey
+}
 
 /** Infers the mount base path from the SPA location (…/UI/Dashboard → prefix). */
 export function inferBasePath(pathname: string): string {
@@ -48,6 +60,7 @@ export function getBasePath(): string {
 export function _resetForTests(): void {
   basePath = ''
   basePathLocked = false
+  apiKey = ''
 }
 
 // 401 handling is injectable so unit tests can observe it without a DOM.
@@ -104,6 +117,12 @@ export function shutdown(apiKey: string): Promise<{ ShuttingDown: boolean }> {
   return request('POST', `/api/v2.0/server/shutdown?apikey=${encodeURIComponent(apiKey)}`)
 }
 
+/** Triggers the update check (backend-api.md §1.5; upstream
+ *  api.updateServer → "Updater triggered see log for details.."). */
+export function checkForUpdates(): Promise<void> {
+  return request<void>('POST', '/api/v2.0/server/update')
+}
+
 // --- §2 indexers ------------------------------------------------------------
 
 export function getIndexers(configured?: boolean): Promise<IndexerDTO[]> {
@@ -149,6 +168,8 @@ export interface ManualSearchParams {
 
 export function manualSearch(indexerId: string, params: ManualSearchParams): Promise<ManualSearchResult> {
   const q = new URLSearchParams()
+  // upstream: indexers/{id}/results?apikey=<key> (libs/api.js:51)
+  if (apiKey) q.set('apikey', apiKey)
   if (params.query) q.set('query', params.query)
   if (params.trackers?.length) q.set('Tracker[]', params.trackers.join(','))
   if (params.categories?.length) q.set('Category[]', params.categories.join(','))

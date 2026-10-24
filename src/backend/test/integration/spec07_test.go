@@ -358,14 +358,14 @@ type manualResult struct {
 		Title     string `json:"Title"`
 		Tracker   string `json:"Tracker"`
 		TrackerID string `json:"TrackerId"`
-	} `json:"Results"`
+	} `json:"results"`
 	Indexers []struct {
 		ID      string  `json:"ID"`
 		Name    string  `json:"Name"`
 		Status  int     `json:"Status"`
 		Results int     `json:"Results"`
 		Error   *string `json:"Error"`
-	} `json:"Indexers"`
+	} `json:"indexers"`
 }
 
 func manualSearch(t *testing.T, e *testEnv, query string) manualResult {

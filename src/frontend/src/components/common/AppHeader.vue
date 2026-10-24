@@ -1,18 +1,21 @@
 <script setup lang="ts">
 import Button from 'primevue/button'
-import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import SettingsDialog from '../settings/SettingsDialog.vue'
 import { useAuthStore } from '../../stores/auth'
 import { useConfigStore } from '../../stores/config'
+import { useSearchStore } from '../../stores/search'
 import CopyButton from './CopyButton.vue'
 
-// Top bar (SPEC-11 §3.5): title + version, API key panel with mask toggle and
-// copy, settings placeholder dialog, logout (upstream only shows it when an
-// admin password is configured), external-access security warning.
+// Top bar (SPEC-11 §3.5 + SPEC-13 §3.5): title + version, global search
+// button, API key panel with mask toggle and copy, settings dialog, logout
+// (upstream only shows it when an admin password is configured),
+// external-access security warning.
 const config = useConfigStore()
 const auth = useAuthStore()
+const search = useSearchStore()
 const router = useRouter()
 
 const keyVisible = ref(false)
@@ -83,6 +86,12 @@ async function doLogout() {
         <span v-if="config.appVersion" class="version">Version {{ config.appVersion }}</span>
       </div>
       <div class="header-actions">
+        <Button
+          icon="pi pi-search"
+          label="Search"
+          severity="success"
+          @click="search.visible = true"
+        />
         <div class="apikey-panel">
           <span class="input-header">API Key:</span>
           <InputText
@@ -117,9 +126,7 @@ async function doLogout() {
         />
       </div>
     </div>
-    <Dialog v-model:visible="settingsOpen" header="Settings" modal :style="{ width: '40rem' }">
-      <p>Server settings land in SPEC-13.</p>
-    </Dialog>
+    <SettingsDialog v-model:visible="settingsOpen" />
   </header>
 </template>
 

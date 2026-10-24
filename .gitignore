@@ -29,3 +29,6 @@ tmp/
 .vscode/
 *.swp
 .DS_Store
+
+# ---- 本地 E2E 临时数据（假站点/调试数据库/日志） ----
+.scratch/

@@ -29,10 +29,12 @@ type ManualSearchResultIndexer struct {
 }
 
 // ManualSearchResult is the aggregate manual-search payload (upstream
-// DTO/ManualSearchResult.cs).
+// DTO/ManualSearchResult.cs). Envelope keys are lowercase per
+// backend-api.md §3.1 ({results, indexers:[…]}); per-entry fields stay
+// PascalCase.
 type ManualSearchResult struct {
-	Results  []models.TrackerCacheResult   `json:"Results"`
-	Indexers []ManualSearchResultIndexer   `json:"Indexers"`
+	Results  []models.TrackerCacheResult `json:"results"`
+	Indexers []ManualSearchResultIndexer `json:"indexers"`
 }
 
 // TorrentPotatoResponse mirrors upstream DTO/TorrentPotatoResponse.cs

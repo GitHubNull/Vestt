@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { getServerConfig, lockBasePath, postServerConfig } from '../services/api'
+import { getServerConfig, lockApiKey, lockBasePath, postServerConfig } from '../services/api'
 import type { ServerConfig, ServerConfigResponse } from '../services/types'
 
 export const useConfigStore = defineStore('config', {
@@ -25,6 +25,7 @@ export const useConfigStore = defineStore('config', {
         this.serverConfig = cfg
         this.loaded = true
         lockBasePath(cfg.basepathoverride)
+        lockApiKey(cfg.api_key)
         return cfg
       } finally {
         this.loading = false

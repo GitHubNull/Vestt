@@ -13,6 +13,23 @@ import (
 // pseudo-class (quoted or bare argument) used by 341 definitions.
 var containsPseudoRe = regexp.MustCompile(`:contains\(\s*(?:"([^"]*)"|'([^']*)'|([^)"']+?))\s*\)`)
 
+// notContainsPseudoRe matches a :not() wrapped :contains() — the emulation
+// must invert the text filter for these instead of leaving a dangling
+// empty :not() behind (which matches nothing; 47 definitions use it).
+var notContainsPseudoRe = regexp.MustCompile(`:not\(\s*:contains\(\s*(?:"([^"]*)"|'([^']*)'|([^)"']+?))\s*\)\s*\)`)
+
+// containsNeedle extracts the search text from a :contains() match group.
+func containsNeedle(g []string) string {
+	needle := g[1]
+	if needle == "" {
+		needle = g[2]
+	}
+	if needle == "" {
+		needle = strings.TrimSpace(g[3])
+	}
+	return needle
+}
+
 // handleSelector ports CardigannIndexer.handleSelector (CardigannIndexer.cs
 // 1291-1366). dom is the document (or element) to search; when required is
 // false, a non-matching selector returns ("", nil) instead of erroring.
@@ -121,20 +138,22 @@ func querySelectorAllContains(dom *goquery.Selection, selector string) *goquery.
 		if compound == ">" || compound == "+" || compound == "~" {
 			continue
 		}
-		matches := containsPseudoRe.FindAllStringSubmatch(compound, -1)
-		base := strings.TrimSpace(containsPseudoRe.ReplaceAllString(compound, ""))
+		notMatches := notContainsPseudoRe.FindAllStringSubmatch(compound, -1)
+		base := notContainsPseudoRe.ReplaceAllString(compound, "")
+		matches := containsPseudoRe.FindAllStringSubmatch(base, -1)
+		base = strings.TrimSpace(containsPseudoRe.ReplaceAllString(base, ""))
 		if base == "" {
 			base = "*"
 		}
 		next := cur.Find(base)
+		for _, g := range notMatches {
+			needle := containsNeedle(g)
+			next = next.FilterFunction(func(_ int, s *goquery.Selection) bool {
+				return !strings.Contains(s.Text(), needle)
+			})
+		}
 		for _, g := range matches {
-			needle := g[1]
-			if needle == "" {
-				needle = g[2]
-			}
-			if needle == "" {
-				needle = strings.TrimSpace(g[3])
-			}
+			needle := containsNeedle(g)
 			next = next.FilterFunction(func(_ int, s *goquery.Selection) bool {
 				return strings.Contains(s.Text(), needle)
 			})

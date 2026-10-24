@@ -108,6 +108,7 @@ App.vue
 | `inputbool` | Checkbox | value 布尔字符串处理 |
 | `inputselect` | Select | `options` 对象 → {label, value} |
 | `inputcheckbox` | MultiSelect（或 Checkbox 组） | `values` 数组 ↔ `options` |
+| `inputtags` | InputChips | Tags 字段；提交为逗号拼接字符串（上游 tagify `originalInputValueFormat`） |
 | `displayinfo` | Message(closable=false) | 纯说明 |
 | `displayimage` | Image | `value` 为 dataURL（验证码），附可选输入框（`cardigannCaptcha`） |
 | `hiddendata` | 不渲染 | 提交时原样回传 |

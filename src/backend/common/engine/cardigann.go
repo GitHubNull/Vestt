@@ -354,6 +354,7 @@ func (x *Cardigann) ConfigurationForSetup(ctx context.Context) ([]map[string]any
 	if _, err := x.getConfigurationForSetup(ctx, false, ""); err != nil {
 		x.log().Error(fmt.Sprintf("Exception in GetConfigurationForSetup (%s): %v", x.ID(), err))
 	}
+	x.PrefillDefaultSiteLink(x.config)
 	return configdata.ItemsJSON(x.config)
 }
 

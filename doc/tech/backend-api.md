@@ -169,7 +169,9 @@ Torznab 错误响应统一为（HTTP 状态恒为 200，仅上游 429 例外—�
 ]
 ```
 
-字段类型全集：`inputstring | password | hiddendata | inputbool | inputcheckbox | inputselect | displayinfo | displayimage`。
+字段类型全集：`inputstring | password | hiddendata | inputbool | inputcheckbox | inputselect | inputtags | displayinfo | displayimage`
+（`inputtags` 为 Tags 字段，带 `separator/pattern/delimiters` 元数据，提交值为逗号拼接字符串；
+上游 `ConfigurationData.ToJson` 另有 `recaptcha` 类型，后端不发射、前端不渲染）。
 
 ### 2.3 `POST /api/v2.0/indexers/{indexerId}/Config`
 

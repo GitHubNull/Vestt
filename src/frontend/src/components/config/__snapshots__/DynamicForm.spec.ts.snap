@@ -1,0 +1,69 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`DynamicForm 8 field types (SPEC-12 §5.2) > matches the snapshot for the full fixture 1`] = `
+"<form data-v-bba834d0="" class="dynamic-form">
+  <div data-v-a33a01ba="" data-v-bba834d0="" class="dynamic-field" data-field-id="sitelink" data-field-type="inputstring"><label data-v-a33a01ba="" class="field-label">Site Link</label><input data-v-a33a01ba="" type="text" class="p-inputtext p-component p-filled field-input" data-p="" data-role="inputstring" data-pc-name="inputtext" pc0="" data-pc-section="root" value="https://site.example/"></div>
+  <div data-v-a33a01ba="" data-v-bba834d0="" class="dynamic-field" data-field-id="username" data-field-type="inputstring"><label data-v-a33a01ba="" class="field-label">Username</label><input data-v-a33a01ba="" type="text" class="p-inputtext p-component field-input" data-p="" data-role="inputstring" data-pc-name="inputtext" pc1="" data-pc-section="root"></div>
+  <div data-v-a33a01ba="" data-v-bba834d0="" class="dynamic-field" data-field-id="password" data-field-type="password"><label data-v-a33a01ba="" class="field-label">Password</label>
+    <div data-v-a33a01ba="" class="p-password p-component p-inputwrapper p-inputwrapper-filled field-input" data-p="" data-role="password" data-pc-name="password" pc2="" data-pc-section="root"><input type="password" class="p-inputtext p-component p-filled p-password-input" data-p="" id="pv_id_3" style="width: 100%;" aria-expanded="false" aria-haspopup="false" data-p-has-e-icon="true" data-pc-name="pcinputtext" data-pc-extend="inputtext" pc3="" data-pc-section="root" value="|||%%PREVJACKPASSWD%%|||">
+      <!----><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" class="p-icon p-password-toggle-mask-icon p-password-unmask-icon" aria-hidden="true" data-pc-section="unmaskicon">
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M0.0535499 7.25213C0.208567 7.59162 2.40413 12.4 7 12.4C11.5959 12.4 13.7914 7.59162 13.9465 7.25213C13.9487 7.2471 13.9506 7.24304 13.952 7.24001C13.9837 7.16396 14 7.08239 14 7.00001C14 6.91762 13.9837 6.83605 13.952 6.76001C13.9506 6.75697 13.9487 6.75292 13.9465 6.74788C13.7914 6.4084 11.5959 1.60001 7 1.60001C2.40413 1.60001 0.208567 6.40839 0.0535499 6.74788C0.0512519 6.75292 0.0494023 6.75697 0.048 6.76001C0.0163137 6.83605 0 6.91762 0 7.00001C0 7.08239 0.0163137 7.16396 0.048 7.24001C0.0494023 7.24304 0.0512519 7.2471 0.0535499 7.25213ZM7 11.2C3.664 11.2 1.736 7.92001 1.264 7.00001C1.736 6.08001 3.664 2.80001 7 2.80001C10.336 2.80001 12.264 6.08001 12.736 7.00001C12.264 7.92001 10.336 11.2 7 11.2ZM5.55551 9.16182C5.98308 9.44751 6.48576 9.6 7 9.6C7.68891 9.59789 8.349 9.32328 8.83614 8.83614C9.32328 8.349 9.59789 7.68891 9.59999 7C9.59999 6.48576 9.44751 5.98308 9.16182 5.55551C8.87612 5.12794 8.47006 4.7947 7.99497 4.59791C7.51988 4.40112 6.99711 4.34963 6.49276 4.44995C5.98841 4.55027 5.52513 4.7979 5.16152 5.16152C4.7979 5.52513 4.55027 5.98841 4.44995 6.49276C4.34963 6.99711 4.40112 7.51988 4.59791 7.99497C4.7947 8.47006 5.12794 8.87612 5.55551 9.16182ZM6.2222 5.83594C6.45243 5.6821 6.7231 5.6 7 5.6C7.37065 5.6021 7.72553 5.75027 7.98762 6.01237C8.24972 6.27446 8.39789 6.62934 8.4 7C8.4 7.27689 8.31789 7.54756 8.16405 7.77779C8.01022 8.00802 7.79157 8.18746 7.53575 8.29343C7.27994 8.39939 6.99844 8.42711 6.72687 8.37309C6.4553 8.31908 6.20584 8.18574 6.01005 7.98994C5.81425 7.79415 5.68091 7.54469 5.6269 7.27312C5.57288 7.00155 5.6006 6.72006 5.70656 6.46424C5.81253 6.20842 5.99197 5.98977 6.2222 5.83594Z" fill="currentColor"></path>
+      </svg>
+      <!----><span class="p-hidden-accessible" aria-live="polite" data-pc-section="hiddenaccesible" data-p-hidden-accessible="true"></span>
+      <!---->
+    </div>
+  </div>
+  <!--v-if-->
+  <div data-v-a33a01ba="" data-v-bba834d0="" class="dynamic-field" data-field-id="freeleech" data-field-type="inputbool"><label data-v-a33a01ba="" class="field-label">Freeleech</label>
+    <div data-v-a33a01ba="" class="field-checkbox">
+      <div data-v-a33a01ba="" class="p-checkbox p-component" data-role="inputbool" data-pc-name="checkbox" pc5="" data-pc-section="root" data-p-checked="false" data-p-disabled="false" data-p=""><input id="cfg-freeleech" type="checkbox" class="p-checkbox-input" data-pc-section="input">
+        <div class="p-checkbox-box" data-pc-section="box" data-p="">
+          <!---->
+        </div>
+      </div>
+    </div>
+  </div>
+  <div data-v-a33a01ba="" data-v-bba834d0="" class="dynamic-field" data-field-id="categories" data-field-type="inputcheckbox"><label data-v-a33a01ba="" class="field-label">Categories</label>
+    <div data-v-a33a01ba="" class="p-multiselect p-component p-inputwrapper p-inputwrapper-filled field-input" data-p="" data-role="inputcheckbox" data-pc-name="multiselect" pc6="" data-pc-section="root">
+      <div class="p-hidden-accessible" data-pc-section="hiddeninputcontainer" data-p-hidden-accessible="true"><input type="text" readonly="" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false" data-pc-section="hiddeninput"></div>
+      <div class="p-multiselect-label-container" data-pc-section="labelcontainer">
+        <div class="p-multiselect-label" data-p="" data-pc-section="label">Movies</div>
+      </div>
+      <!---->
+      <div class="p-multiselect-dropdown" data-pc-section="dropdown"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" class="p-icon p-multiselect-dropdown-icon" aria-hidden="true" data-p="" data-pc-section="dropdownicon">
+          <path d="M7.01744 10.398C6.91269 10.3985 6.8089 10.378 6.71215 10.3379C6.61541 10.2977 6.52766 10.2386 6.45405 10.1641L1.13907 4.84913C1.03306 4.69404 0.985221 4.5065 1.00399 4.31958C1.02276 4.13266 1.10693 3.95838 1.24166 3.82747C1.37639 3.69655 1.55301 3.61742 1.74039 3.60402C1.92777 3.59062 2.11386 3.64382 2.26584 3.75424L7.01744 8.47394L11.769 3.75424C11.9189 3.65709 12.097 3.61306 12.2748 3.62921C12.4527 3.64535 12.6199 3.72073 12.7498 3.84328C12.8797 3.96582 12.9647 4.12842 12.9912 4.30502C13.0177 4.48162 12.9841 4.662 12.8958 4.81724L7.58083 10.1322C7.50996 10.2125 7.42344 10.2775 7.32656 10.3232C7.22968 10.3689 7.12449 10.3944 7.01744 10.398Z" fill="currentColor"></path>
+        </svg></div>
+      <!---->
+    </div>
+  </div>
+  <div data-v-a33a01ba="" data-v-bba834d0="" class="dynamic-field" data-field-id="authentication" data-field-type="inputselect"><label data-v-a33a01ba="" class="field-label">Authentication method</label>
+    <div data-v-a33a01ba="" id="pv_id_8" class="p-select p-component p-inputwrapper p-inputwrapper-filled field-input" data-p="" data-role="inputselect" data-pc-name="select" pc8="" data-pc-section="root"><span class="p-select-label" tabindex="0" role="combobox" aria-label="Form" aria-haspopup="listbox" aria-expanded="false" aria-controls="pv_id_8_list" aria-disabled="false" data-p="" data-pc-section="label">Form</span>
+      <!---->
+      <div class="p-select-dropdown" data-pc-section="dropdown"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" class="p-icon p-select-dropdown-icon" aria-hidden="true" data-p="" data-pc-section="dropdownicon">
+          <path d="M7.01744 10.398C6.91269 10.3985 6.8089 10.378 6.71215 10.3379C6.61541 10.2977 6.52766 10.2386 6.45405 10.1641L1.13907 4.84913C1.03306 4.69404 0.985221 4.5065 1.00399 4.31958C1.02276 4.13266 1.10693 3.95838 1.24166 3.82747C1.37639 3.69655 1.55301 3.61742 1.74039 3.60402C1.92777 3.59062 2.11386 3.64382 2.26584 3.75424L7.01744 8.47394L11.769 3.75424C11.9189 3.65709 12.097 3.61306 12.2748 3.62921C12.4527 3.64535 12.6199 3.72073 12.7498 3.84328C12.8797 3.96582 12.9647 4.12842 12.9912 4.30502C13.0177 4.48162 12.9841 4.662 12.8958 4.81724L7.58083 10.1322C7.50996 10.2125 7.42344 10.2775 7.32656 10.3232C7.22968 10.3689 7.12449 10.3944 7.01744 10.398Z" fill="currentColor"></path>
+        </svg></div>
+      <!---->
+    </div>
+  </div>
+  <div data-v-a33a01ba="" data-v-bba834d0="" class="dynamic-field" data-field-id="flaresolverr" data-field-type="displayinfo">
+    <!--v-if-->
+    <transition-stub data-v-a33a01ba="" name="p-message" appear="true" persisted="false" css="true">
+      <div class="p-message p-component p-message-info" role="alert" aria-live="assertive" aria-atomic="true" data-p="info" data-pc-name="message" pc10="" data-pc-section="root">
+        <div class="p-message-content-wrapper" data-pc-section="contentwrapper">
+          <div class="p-message-content" data-p="info" data-pc-section="content">
+            <!---->
+            <div class="p-message-text" data-p="info" data-pc-section="text">
+              <!-- upstream renders displayinfo raw ({{{value}}}); the content comes
+           from local GPL definition files, not user input. --><span data-v-a33a01ba="">This site may use Cloudflare DDoS Protection.</span>
+            </div>
+            <!---->
+          </div>
+        </div>
+      </div>
+    </transition-stub>
+  </div>
+  <div data-v-a33a01ba="" data-v-bba834d0="" class="dynamic-field" data-field-id="CaptchaImage" data-field-type="displayimage">
+    <!--v-if--><img data-v-a33a01ba="" class="field-image" src="data:image/jpeg;base64,captcha-bytes" alt="No image available" data-role="displayimage">
+  </div>
+</form>"
+`;

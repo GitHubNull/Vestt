@@ -99,3 +99,66 @@ setSavedPresets / prepareSearchButtons`（搜索）；`loadJackettSettings + 设
    LogViewer 轮询开关 2 用例。
 4. **上游行为核对**：frontend.md §7 映射表逐行勾选，全部有对应实现（写入澄清记录）。
 5. `pnpm --dir src/frontend typecheck && test && build` 全绿；`make build` 产物联调通过；更新 roadmap 进度表。
+
+## 澄清记录
+
+### 后端契约修正（实现期间发现，backend-api.md 原本就是对的，是代码偏离了文档）
+
+1. **ManualSearchResult 信封大小写**：`server/api/dto.go` 原序列化为 PascalCase
+   `Results`/`Indexers`，与 backend-api.md §3.1 文档（小写 `results`/`indexers`）不符，
+   前端按文档解析得到 `undefined`。已改为小写标签，并同步修正
+   `test/integration/spec07_test.go` 的信封解析结构。
+2. **TrackerCacheResult 的 URL 字段序列化**：`net/url.URL` 默认序列化为
+   `{Scheme, Host, Path, ...}` 对象，而文档 §2.6/§3.1 要求字符串（nil→null）。
+   已为 `TrackerCacheResult` 增加 `MarshalJSON`（扁平 DTO，Guid/Link/Details/Poster/
+   MagnetUri/BlackholeLink 输出为字符串或 null），并新增
+   `common/models/tracker_cache_result_test.go` 锁定该契约。
+3. **手动搜索必须带 `apikey` 查询参数**：与上游 `Content/custom.js` 行为一致
+   （上游 api.js:51 `indexers/{id}/results?apikey=` + key）。前端在 config 加载时
+   通过 `lockApiKey()` 钉住 key，`manualSearch` 自动附带。
+
+### 上游行为核对结论（frontend.md §7 映射表逐行）
+
+| 映射行 | 实现 | 结论 |
+|---|---|---|
+| loadJackettSettings | `configStore.load` | ✅ |
+| reloadIndexers / configureFilters / display*IndexersList | `indexersStore.load` + IndexerTable computed | ✅ |
+| addIndexer / addIndexers | `indexersStore.add / addBatch` | ✅ |
+| testIndexer / updateTestState | `indexersStore.test` + TestStateBadge | ✅ |
+| displayIndexerSetup / newConfigModal / getConfigModalJson | IndexerConfigDialog + DynamicForm | ✅ |
+| showSearch / updateSearchResultTable / updateReleasesRow | `searchStore.run` + SearchDialog + SearchResultTable | ✅ |
+| getSavedPresets / setSavedPresets | PresetBar + `services/searchPresets.ts`（localStorage） | ✅（结构化扩展，见下） |
+| bindUIButtons | 各组件内联事件 | ✅ |
+| doNotify / doErrorNotify | `common/notify.ts` | ✅ |
+
+SPEC-13 新增覆盖：Logs 视图 → LogViewer；Cache 视图 → CacheReleases；设置弹窗 →
+SettingsDialog + ServerConfigForm；proxyWarning → `settings.isProxyWarningVisible`。
+
+### 与上游的有意偏差
+
+1. **预设为结构化对象**：上游 `jackett_saved_presets` 仅存名字符串（用作结果表
+   搜索框 datalist 过滤）；SPEC §3.1.5 明确 `vestt.presets` 数组元素含
+   name/query/trackers/cats，应用预设即回填表单，再点 Search 重发同一请求
+   （验收 §5.1"同请求重发"按此口径验证：保存→刷新→应用→`run()` 发出与保存时
+   完全相同的 URL）。
+2. **proxyWarning 显示条件**：SPEC §3.3 表内规则"type≠disabled 且 url 空"；上游
+   custom.js 是"proxy 类型非 disabled 即显示"。以 SPEC 为准。
+3. **行内 Search 按钮不写 hash**：上游点击索引器行 Search 会跳 `?search=...`；
+   Vestt 直接打开弹窗并预置 tracker（不污染地址栏）。hash 深链入口保持不变。
+4. **类别树为常量表**：与上游 UI 一致用常量 Torznab 主类树（SPEC §3.1.2 明示），
+   非 caps 汇总。
+
+### 实现期陷阱（留给后人）
+
+1. **primeicons 必须显式引 CSS**：`main.ts` 需 `import 'primeicons/primeicons.css'`，
+   否则全部 `pi pi-*` 图标不可见（本次用户报障的根因）。
+2. **vue-router 哈希规范化**：`createWebHashHistory` 创建时会把裸 `#search=...`
+   规范为 `#/search=...`（ES import 提升使该动作早于 main.ts 函数体）；解析层
+   需剥离前导斜杠并拒绝 dashboard/login 路由哈希。深链恢复用
+   `history.replaceState`，不触发 hashchange/popstate。
+3. **Pinia 响应式对象不能 `structuredClone`**：draftFromConfig 用 JSON 往返。
+4. **PrimeVue 4 Select 选项选中绑定的是 `mousedown`**（非 click）：E2E 脚本驱动
+   需对此分发 mousedown 事件；真实用户不受影响。
+5. **种子/下载列不上色**：上游 updateReleasesRow 只对 DLF/ULF 徽标着色，
+   Seeders/Peers 无颜色规则，照实复刻（SPEC §3.1.4"红绿着色规则对齐上游"
+   实为 DLF/ULF 徽标规则）。

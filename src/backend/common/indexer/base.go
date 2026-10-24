@@ -178,8 +178,18 @@ func (b *Base) logger() *slog.Logger {
 // ConfigData returns the embedded base configuration.
 func (b *Base) ConfigData() *configdata.ConfigData { return configdata.Find(b.Config) }
 
+// PrefillDefaultSiteLink mirrors the upstream setup-form behavior: an
+// unconfigured indexer's Site Link field shows the default link (the
+// stored value only exists after the first LoadValuesFromJSON).
+func (b *Base) PrefillDefaultSiteLink(cfg any) {
+	if cd := configdata.Find(cfg); cd != nil && strings.TrimSpace(cd.SiteLink.Value) == "" {
+		cd.SiteLink.Value = b.DefaultSiteLink
+	}
+}
+
 // ConfigurationForSetup renders the display form (backend-api.md §2.2).
 func (b *Base) ConfigurationForSetup(_ context.Context) ([]map[string]any, error) {
+	b.PrefillDefaultSiteLink(b.Config)
 	return configdata.ItemsJSON(b.Config)
 }
 

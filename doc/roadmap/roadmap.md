@@ -70,8 +70,8 @@ SPEC-01 ──▶ SPEC-02 ──▶ SPEC-03 ──▶ SPEC-04 ──▶ SPEC-05 
 | 09 | ☐ 未开始 | | |
 | 10 | ☐ 未开始 | | |
 | 11 | ☑ 完成 | 2026-10-24 | 前端基座全量落地：PrimeVue4 Aura definePreset + Toast/Dialog 服务 + 全局错误钩子、契约层（basePath 推断/锁定、401 归一、14 个命名 API）、5 stores（auth/config/logs 全功能 + indexers/search 骨架）、hash 路由 + 会话探针守卫、LoginView（上游 login.html 对等）、仪表盘壳（AppHeader API Key 遮罩/复制/注销、external 安全警告横幅、三下拉筛选 + 计数徽标、双 Tab 占位表、skeleton）、utils/hash；vitest 26 项全过；后端配套：/UI/assets 静态路由、DashboardGet 直出 SPA；浏览器实测登录全链路；澄清记录 13 条 |
-| 12 | ☐ 未开始 | | |
-| 13 | ☐ 未开始 | | |
+| 12 | ☑ 完成 | 2026-10-24 | 索引器管理全量落地：双表（已配置 Status 徽标/未配置复选批量添加）、三下拉 AND 筛选 + 深度链接（路由 query 同步与恢复）、动态配置表单（9 类字段含 inputtags/验证码图 + alt 链接 + caps 表 + 错误 Alert）、配置/测试/删除/Test All（串行 200ms）全链路 store；vitest 50 项（store 18 + DynamicForm 快照 + CopyButton 2 等）全过；后端联调修复 3 处保真缺陷（sitelink 预填、:not(:contains()) 47 定义、inputtags 契约）均带回归测试；E2E 7 场景真实浏览器全过（0Magnet/0day.kiev 错误/13City cookie/3dtorrents 验证码/批量添加 Toast/筛选深链/删除确认）；澄清记录 11 条 |
+| 13 | ☑ 完成 | 2026-10-25 | 搜索/缓存/设置/日志全量落地：SearchDialog（query 回车/Tracker MultiSelect/类别常量树/分项状态条 OK·Error·Unknown/骨架加载/错误态）、SearchResultTable（paginator 50/死种过滤/行展开海报+InfoHash+Ratio/SeedTime+DVF·UVF+FREELEECH 徽标/Details+IMDB·TMDB·TVDB 外链/jacketSize+jacketTimespan/黑hole+磁链+下载操作）、PresetBar（结构化预设 localStorage 同名覆盖）、hash 深链（裸 `#search=` 经 vue-router 斜杠规范化解析/刷新可恢复/打开即执行/restoreSearchHash 无痕还原）、SettingsDialog 四页签（ServerConfigForm 分区表单+PATCH 合并 diff+restart_required 横幅+400 分区 Alert+proxyWarning+密码修改、CacheReleases FirstSeen 视图+禁用提示、LogViewer 轮询开关+级别徽标+"加载更早"、ApiKeyPanel）；stores：search 状态机/日志分页/settings diff 合并与错误归段；vitest 90 项全过；后端契约修正 3 处（信封小写 results/indexers、TrackerCacheResult 自定义 MarshalJSON URL 字符串化、manualSearch 自动附带 apikey）均带回归测试；E2E 真实浏览器全过（深链刷新恢复/预设重放松散 URL 逐字符一致/类别过滤 4000→5 行/端口改→重启横幅/70000→分区 Alert 服务端原文/socks5 空 url→proxyWarning 原文/日志时间线一致/更新检查 toast）；澄清记录 5 节（§7 映射表 9 行逐行勾选） |
 | 14 | ☐ 未开始 | | |
 
 状态取值：`☐ 未开始` / `◐ 进行中` / `☑ 完成` / `✗ 阻塞（备注注明原因）`。

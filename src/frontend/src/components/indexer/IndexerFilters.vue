@@ -38,6 +38,18 @@ function countBy(pred: (i: IndexerDTO) => boolean): number {
   return props.indexers.filter(pred).length
 }
 
+/** distinct tags, case-insensitively merged (SPEC-12 §3.2 tag_filter). */
+const mergedTags = computed<string[]>(() => {
+  const seen = new Map<string, string>()
+  for (const i of props.indexers) {
+    for (const t of i.tags) {
+      const k = t.toLowerCase()
+      if (!seen.has(k)) seen.set(k, t)
+    }
+  }
+  return [...seen.values()].sort((a, b) => a.localeCompare(b))
+})
+
 const typeOptions = computed<Option[]>(() =>
   TYPE_OPTIONS.map((o) => ({
     ...o,
@@ -45,13 +57,14 @@ const typeOptions = computed<Option[]>(() =>
   })),
 )
 
-const tagOptions = computed<Option[]>(() => {
-  const tags = [...new Set(props.indexers.flatMap((i) => i.tags))].sort()
-  return [
-    { label: 'All', value: 'all', count: props.indexers.length },
-    ...tags.map((t) => ({ label: t, value: t, count: countBy((i) => i.tags.includes(t)) })),
-  ]
-})
+const tagOptions = computed<Option[]>(() => [
+  { label: 'All', value: 'all', count: props.indexers.length },
+  ...mergedTags.value.map((t) => ({
+    label: t,
+    value: t,
+    count: countBy((i) => i.tags.some((x) => x.toLowerCase() === t.toLowerCase())),
+  })),
+])
 
 const stateOptions = computed<Option[]>(() =>
   STATE_OPTIONS.map((o) => ({
