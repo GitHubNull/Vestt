@@ -1,0 +1,143 @@
+<script setup lang="ts">
+import Badge from 'primevue/badge'
+import Select from 'primevue/select'
+import { computed } from 'vue'
+import type { IndexerDTO } from '../../services/types'
+import type { IndexerFilters } from '../../stores/indexers'
+
+// Filter bar (SPEC-11 §3.5): type / tag / state dropdowns with counts.
+// Selection wiring into the tables lands with SPEC-12; this component is
+// purely driven by props.
+const props = defineProps<{
+  modelValue: IndexerFilters
+  indexers: IndexerDTO[]
+}>()
+const emit = defineEmits<{ 'update:modelValue': [IndexerFilters] }>()
+
+const TYPE_OPTIONS = [
+  { label: 'All', value: 'all' },
+  { label: 'Public', value: 'public' },
+  { label: 'Semi-Private', value: 'semi-private' },
+  { label: 'Private', value: 'private' },
+]
+
+const STATE_OPTIONS = [
+  { label: 'All', value: 'all' },
+  { label: 'Healthy', value: 'healthy' },
+  { label: 'Failing', value: 'failing' },
+  { label: 'Untested', value: 'untested' },
+]
+
+interface Option {
+  label: string
+  value: string
+  count: number
+}
+
+function countBy(pred: (i: IndexerDTO) => boolean): number {
+  return props.indexers.filter(pred).length
+}
+
+const typeOptions = computed<Option[]>(() =>
+  TYPE_OPTIONS.map((o) => ({
+    ...o,
+    count: o.value === 'all' ? props.indexers.length : countBy((i) => i.type === o.value),
+  })),
+)
+
+const tagOptions = computed<Option[]>(() => {
+  const tags = [...new Set(props.indexers.flatMap((i) => i.tags))].sort()
+  return [
+    { label: 'All', value: 'all', count: props.indexers.length },
+    ...tags.map((t) => ({ label: t, value: t, count: countBy((i) => i.tags.includes(t)) })),
+  ]
+})
+
+const stateOptions = computed<Option[]>(() =>
+  STATE_OPTIONS.map((o) => ({
+    ...o,
+    count:
+      o.value === 'all'
+        ? props.indexers.length
+        : o.value === 'healthy'
+          ? countBy((i) => i.configured && i.last_error === null)
+          : o.value === 'failing'
+            ? countBy((i) => i.last_error !== null && i.last_error !== '')
+            : countBy((i) => !i.configured),
+  })),
+)
+
+function update(patch: Partial<IndexerFilters>) {
+  emit('update:modelValue', { ...props.modelValue, ...patch })
+}
+</script>
+
+<template>
+  <div class="indexer-filters">
+    <div class="filter-field">
+      <label>Type</label>
+      <Select
+        :model-value="modelValue.type"
+        :options="typeOptions"
+        option-label="label"
+        option-value="value"
+        @update:model-value="update({ type: $event as IndexerFilters['type'] })"
+      >
+        <template #option="{ option }">
+          <span>{{ option.label }}</span>
+          <Badge :value="option.count" severity="secondary" />
+        </template>
+      </Select>
+    </div>
+    <div class="filter-field">
+      <label>Tag</label>
+      <Select
+        :model-value="modelValue.tag"
+        :options="tagOptions"
+        option-label="label"
+        option-value="value"
+        @update:model-value="update({ tag: $event })"
+      >
+        <template #option="{ option }">
+          <span>{{ option.label }}</span>
+          <Badge :value="option.count" severity="secondary" />
+        </template>
+      </Select>
+    </div>
+    <div class="filter-field">
+      <label>Status</label>
+      <Select
+        :model-value="modelValue.state"
+        :options="stateOptions"
+        option-label="label"
+        option-value="value"
+        @update:model-value="update({ state: $event })"
+      >
+        <template #option="{ option }">
+          <span>{{ option.label }}</span>
+          <Badge :value="option.count" severity="secondary" />
+        </template>
+      </Select>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.indexer-filters {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1rem 1.5rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 12rem;
+}
+.filter-field label {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+</style>
