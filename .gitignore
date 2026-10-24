@@ -1,0 +1,30 @@
+# ---- 构建产物 ----
+dist/
+src/backend/server/static/dist/
+
+# ---- 前端（src/frontend/）----
+src/frontend/node_modules/
+src/frontend/dist/
+
+# ---- Go ----
+*.exe
+*.test
+*.out
+coverage.*
+
+# ---- 运行数据 ----
+data/
+Logs/
+*.log
+*.db
+*.db-shm
+*.db-wal
+
+# ---- 上游参考代码（只读，不入库）----
+tmp/
+
+# ---- IDE / 编辑器 / 系统 ----
+.idea/
+.vscode/
+*.swp
+.DS_Store
