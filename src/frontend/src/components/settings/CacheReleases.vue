@@ -32,7 +32,7 @@ onMounted(async () => {
 <template>
   <div class="cache-releases">
     <p v-if="!config.serverConfig?.cache_enabled" class="cache-disabled">
-      The result cache is disabled. Enable it under Server Config → Cache to use cached releases.
+      {{ $t('cache.disabled') }}
     </p>
     <template v-else>
       <p v-if="error" class="cache-error">{{ error }}</p>

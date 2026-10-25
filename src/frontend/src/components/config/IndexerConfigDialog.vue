@@ -4,6 +4,7 @@ import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import ProgressSpinner from 'primevue/progressspinner'
 import { computed, nextTick, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { notify } from '../common/notify'
 import { errMessage } from '../../stores/indexers'
 import { getIndexerConfig, postIndexerConfig } from '../../services/api'
@@ -15,6 +16,7 @@ import DynamicForm from './DynamicForm.vue'
 // renders the dynamic form, owns submit + error handling, and refreshes
 // the captcha image after failures.
 
+const { t } = useI18n()
 const props = defineProps<{
   indexer: IndexerDTO | null
 }>()
@@ -41,7 +43,7 @@ async function fetchConfig(): Promise<void> {
     fields.value = await getIndexerConfig(props.indexer.id)
   } catch (err) {
     errorText.value = errMessage(err)
-    notify.danger('Request to Jackett server failed')
+    notify.danger(t('configDialog.requestFailed'))
   } finally {
     loading.value = false
   }
@@ -68,7 +70,7 @@ async function submit(): Promise<void> {
   errorText.value = ''
   try {
     await postIndexerConfig(props.indexer.id, formRef.value.buildItems())
-    notify.success(`Successfully configured ${props.indexer.name}`)
+    notify.success(t('configDialog.configured', { name: props.indexer.name }))
     visible.value = false
     emit('saved', props.indexer.id, props.indexer.configured)
   } catch (err) {
@@ -86,7 +88,7 @@ async function submit(): Promise<void> {
       }
     }
     if (e.status !== 400) {
-      notify.danger(`Configuration failed: ${errorText.value}`)
+      notify.danger(t('configDialog.configFailed', { message: errorText.value }))
     }
   } finally {
     submitting.value = false
@@ -111,17 +113,17 @@ async function submit(): Promise<void> {
       </Alert>
 
       <p class="meta-line">
-        <span class="meta-item">Type: {{ indexer.type }}</span>
-        <span class="meta-item">Language: {{ indexer.language }}</span>
+        <span class="meta-item">{{ $t('configDialog.typeLabel', { type: indexer.type }) }}</span>
+        <span class="meta-item">{{ $t('configDialog.languageLabel', { language: indexer.language }) }}</span>
         <button type="button" class="caps-toggle" @click="capsOpen = !capsOpen">
-          {{ capsOpen ? 'Hide capabilities' : `Capabilities (${indexer.caps.length})` }}
+          {{ capsOpen ? $t('configDialog.hideCapabilities') : $t('configDialog.capabilities', { count: indexer.caps.length }) }}
         </button>
       </p>
 
       <div v-if="capsOpen" class="caps-list">
         <table>
           <thead>
-            <tr><th>Category</th><th>Description</th></tr>
+            <tr><th>{{ $t('configDialog.category') }}</th><th>{{ $t('configDialog.description') }}</th></tr>
           </thead>
           <tbody>
             <tr v-for="cap in indexer.caps" :key="cap.ID">
@@ -133,13 +135,13 @@ async function submit(): Promise<void> {
       </div>
 
       <div v-if="hasAltLinks" class="alt-links alert-box">
-        <p>This indexer has multiple known URLs:</p>
+        <p>{{ $t('configDialog.altUrls') }}</p>
         <ul>
           <li v-for="link in indexer.alternativesitelinks" :key="link">
             <a href="#" @click.prevent="pickSiteLink(link)">{{ link }}</a>
           </li>
         </ul>
-        <p>Click on a URL to load it into the Site Link field.</p>
+        <p>{{ $t('configDialog.altUrlsHint') }}</p>
       </div>
 
       <ProgressSpinner v-if="loading" class="loader" />
@@ -152,16 +154,16 @@ async function submit(): Promise<void> {
     </div>
 
     <template #footer>
-      <Button label="Close" severity="secondary" @click="visible = false" />
+      <Button :label="$t('configDialog.close')" severity="secondary" @click="visible = false" />
       <Button
         v-if="hasCaptcha && !loading"
-        label="Refresh captcha"
+        :label="$t('configDialog.refreshCaptcha')"
         severity="secondary"
         :disabled="submitting"
         @click="fetchConfig"
       />
       <Button
-        label="Okay"
+        :label="$t('configDialog.okay')"
         :loading="submitting"
         :disabled="loading"
         @click="submit"
@@ -229,8 +231,8 @@ async function submit(): Promise<void> {
   padding-left: 1.25rem;
 }
 .alert-box {
-  background: var(--p-blue-50);
-  border: 1px solid var(--p-blue-200);
+  background: color-mix(in srgb, var(--p-blue-500) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--p-blue-500) 40%, transparent);
   border-radius: var(--p-content-border-radius);
   padding: 0.75rem;
 }

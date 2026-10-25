@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { IndexerDTO } from './types'
 import {
   buildSearchHash,
+  parseIndexersHash,
   parseSearchHash,
   resolveFilterTrackers,
 } from './searchHash'
@@ -64,6 +65,29 @@ const INDEXERS: IndexerDTO[] = [
   { id: 'priv1', name: 'Priv1', description: '', type: 'private', configured: true, site_link: '', alternativesitelinks: [], language: '', tags: [], last_error: null, potatoenabled: false, caps: [] },
   { id: 'unconf', name: 'Unconf', description: '', type: 'public', configured: false, site_link: '', alternativesitelinks: [], language: '', tags: [], last_error: null, potatoenabled: false, caps: [] },
 ]
+
+describe('parseIndexersHash', () => {
+  it('parses a bare upstream filter deep link', () => {
+    expect(parseIndexersHash('#indexers=1&filter=%7B%22type%22%3A%22private%22%7D')).toEqual({
+      filter: '{"type":"private"}',
+    })
+  })
+
+  it('tolerates the leading slash vue-router injects at boot', () => {
+    expect(parseIndexersHash('#/indexers=1&filter=%7B%7D')).toEqual({ filter: '{}' })
+  })
+
+  it('accepts a missing filter', () => {
+    expect(parseIndexersHash('#indexers=1')).toEqual({ filter: null })
+  })
+
+  it('returns null for in-route hashes and non-indexer fragments', () => {
+    expect(parseIndexersHash('#/indexers?indexers=1&filter=%7B%7D')).toBeNull()
+    expect(parseIndexersHash('#/indexers')).toBeNull()
+    expect(parseIndexersHash('#search=matrix')).toBeNull()
+    expect(parseIndexersHash('')).toBeNull()
+  })
+})
 
 describe('resolveFilterTrackers', () => {
   it('null filter resolves to every configured indexer', () => {

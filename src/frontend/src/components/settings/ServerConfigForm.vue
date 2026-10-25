@@ -7,6 +7,7 @@ import Message from 'primevue/message'
 import Password from 'primevue/password'
 import Select from 'primevue/select'
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { notify } from '../common/notify'
 import { checkForUpdates } from '../../services/api'
 import { errMessage } from '../../stores/indexers'
@@ -18,6 +19,7 @@ import type { ServerConfig } from '../../services/types'
 // saving diffs the draft (PATCH semantics per SPEC §3.3.1) and a 400 maps
 // to the owning section's Alert (SPEC §3.3.2).
 
+const { t } = useI18n()
 const settings = useSettingsStore()
 
 const newPassword = ref('')
@@ -61,12 +63,12 @@ const blankDraft: ServerConfig = {
 
 const draft = computed<ServerConfig>(() => settings.draft ?? blankDraft)
 
-const proxyTypeOptions = [
-  { label: 'Disabled', value: '-1' },
+const proxyTypeOptions = computed(() => [
+  { label: t('server.proxyDisabled'), value: '-1' },
   { label: 'HTTP', value: '0' },
   { label: 'SOCKS4', value: '1' },
   { label: 'SOCKS5', value: '2' },
-]
+])
 
 function sectionError(section: SettingsSection): string | null {
   return settings.sectionErrors[section] ?? null
@@ -75,24 +77,24 @@ function sectionError(section: SettingsSection): string | null {
 async function save(): Promise<void> {
   const ok = await settings.save()
   if (ok) {
-    notify.success('Server settings applied')
+    notify.success(t('server.applied'))
   }
 }
 
 async function changePassword(): Promise<void> {
   passwordError.value = null
   if (newPassword.value === '') {
-    passwordError.value = 'Enter a password first'
+    passwordError.value = t('server.pwdFirst')
     return
   }
   if (newPassword.value !== confirmPassword.value) {
-    passwordError.value = 'Passwords do not match'
+    passwordError.value = t('server.pwdMismatch')
     return
   }
   changingPassword.value = true
   try {
     await settings.changePassword(newPassword.value)
-    notify.success('Admin password has been set.')
+    notify.success(t('server.pwdSet'))
     newPassword.value = ''
     confirmPassword.value = ''
     // The backend invalidates sessions; upstream reloads the page after 1 s
@@ -109,9 +111,9 @@ async function checkUpdates(): Promise<void> {
   checkingUpdates.value = true
   try {
     await checkForUpdates()
-    notify.success('Updater triggered see log for details..')
+    notify.success(t('server.updaterOk'))
   } catch (err) {
-    notify.danger(`Error: ${errMessage(err)}`)
+    notify.danger(t('server.updaterError', { message: errMessage(err) }))
   } finally {
     checkingUpdates.value = false
   }
@@ -137,50 +139,50 @@ function setNumber(key: NumberKey, value: number | null | undefined): void {
 <template>
   <div v-if="settings.draft" class="server-config">
     <Message v-if="settings.restartRequired" severity="warn" :closable="false" class="restart-banner">
-      Configuration saved. A server restart is required for the changes to take effect.
+      {{ $t('server.restartRequired') }}
     </Message>
 
     <fieldset class="section">
-      <legend>Server base</legend>
+      <legend>{{ $t('server.sectionBase') }}</legend>
       <Message v-if="sectionError('server')" severity="error" :closable="false" class="section-alert">
         {{ sectionError('server') }}
       </Message>
 
       <div class="field">
-        <label for="jackett-port">Server port:</label>
+        <label for="jackett-port">{{ $t('server.port') }}</label>
         <InputNumber id="jackett-port" :model-value="draft.port" :use-grouping="false" class="field-input" @update:model-value="(v) => setNumber('port', v as number | null)" />
       </div>
       <div class="field">
-        <label for="jackett-local-bind-address">Local bind address:</label>
+        <label for="jackett-local-bind-address">{{ $t('server.localBind') }}</label>
         <InputText id="jackett-local-bind-address" v-model="draft.local_bind_address" placeholder="127.0.0.1" class="field-input" />
       </div>
       <div class="field">
-        <label for="jackett-allowext">External access:</label>
+        <label for="jackett-allowext">{{ $t('server.external') }}</label>
         <Checkbox id="jackett-allowext" v-model="draft.external" binary />
       </div>
       <div class="field">
-        <label for="jackett-allowcors">Allow CORS:</label>
+        <label for="jackett-allowcors">{{ $t('server.cors') }}</label>
         <Checkbox id="jackett-allowcors" v-model="draft.cors" binary />
       </div>
       <div class="field">
-        <label for="jackett-basepathoverride">Base path override:</label>
+        <label for="jackett-basepathoverride">{{ $t('server.basePath') }}</label>
         <InputText id="jackett-basepathoverride" v-model="draft.basepathoverride" placeholder="/jackett" class="field-input" />
       </div>
       <div class="field">
-        <label for="jackett-baseurloverride">Base URL override:</label>
+        <label for="jackett-baseurloverride">{{ $t('server.baseURL') }}</label>
         <InputText id="jackett-baseurloverride" v-model="draft.baseurloverride" placeholder="http://jackett:9117" class="field-input" />
       </div>
       <div class="field">
-        <label for="jackett-savedir">Blackhole directory:</label>
+        <label for="jackett-savedir">{{ $t('server.blackhole') }}</label>
         <InputText id="jackett-savedir" v-model="draft.blackholedir" placeholder="c:\torrents\" class="field-input" />
       </div>
 
       <div class="field">
-        <label for="jackett-adminpwd">Admin password:</label>
+        <label for="jackett-adminpwd">{{ $t('server.adminPassword') }}</label>
         <Password
           id="jackett-adminpwd"
           v-model="newPassword"
-          placeholder="Blank to disable"
+          :placeholder="$t('server.adminPasswordPlaceholder')"
           :feedback="false"
           toggle-mask
           class="field-input"
@@ -188,14 +190,14 @@ function setNumber(key: NumberKey, value: number | null | undefined): void {
         />
         <Password
           v-model="confirmPassword"
-          placeholder="Confirm password"
+          :placeholder="$t('server.confirmPassword')"
           :feedback="false"
           toggle-mask
           class="field-input"
           input-class="w-full"
         />
         <Button
-          label="Set Password"
+          :label="$t('server.setPassword')"
           icon="pi pi-user"
           size="small"
           :loading="changingPassword"
@@ -206,101 +208,101 @@ function setNumber(key: NumberKey, value: number | null | undefined): void {
     </fieldset>
 
     <fieldset class="section">
-      <legend>Cache</legend>
+      <legend>{{ $t('server.sectionCache') }}</legend>
       <Message v-if="sectionError('cache')" severity="error" :closable="false" class="section-alert">
         {{ sectionError('cache') }}
       </Message>
       <div class="field">
-        <label for="jackett-cache-enabled">Cache enabled (recommended):</label>
+        <label for="jackett-cache-enabled">{{ $t('server.cacheEnabled') }}</label>
         <Checkbox id="jackett-cache-enabled" v-model="draft.cache_enabled" binary />
       </div>
       <div class="field">
-        <label for="jackett-cache-ttl">Cache TTL (seconds):</label>
+        <label for="jackett-cache-ttl">{{ $t('server.cacheTtl') }}</label>
         <InputNumber id="jackett-cache-ttl" :model-value="draft.cache_ttl" :use-grouping="false" class="field-input" @update:model-value="(v) => setNumber('cache_ttl', v as number | null)" />
       </div>
       <div class="field">
-        <label for="jackett-cache-max-results-per-indexer">Cache max results per indexer:</label>
+        <label for="jackett-cache-max-results-per-indexer">{{ $t('server.cacheMax') }}</label>
         <InputNumber id="jackett-cache-max-results-per-indexer" :model-value="draft.cache_max_results_per_indexer" :use-grouping="false" class="field-input" @update:model-value="(v) => setNumber('cache_max_results_per_indexer', v as number | null)" />
       </div>
     </fieldset>
 
     <fieldset class="section">
-      <legend>Proxy</legend>
+      <legend>{{ $t('server.sectionProxy') }}</legend>
       <Message v-if="sectionError('proxy')" severity="error" :closable="false" class="section-alert">
         {{ sectionError('proxy') }}
       </Message>
       <div class="field">
-        <label for="jackett-proxy-type">Proxy type:</label>
+        <label for="jackett-proxy-type">{{ $t('server.proxyType') }}</label>
         <Select id="jackett-proxy-type" v-model="draft.proxy_type" :options="proxyTypeOptions" option-label="label" option-value="value" class="field-input" />
       </div>
       <div v-if="isProxyWarningVisible(draft)" class="proxy-warning" role="alert">
-        <span>WARNING: The proxy option potentially leaks requests. Recommendation is to use a VPN.</span>
+        <span>{{ $t('server.proxyWarning') }}</span>
       </div>
       <div class="field">
-        <label for="jackett-proxy-url">Proxy URL:</label>
+        <label for="jackett-proxy-url">{{ $t('server.proxyUrl') }}</label>
         <InputText id="jackett-proxy-url" v-model="draft.proxy_url" class="field-input" />
       </div>
       <div class="field">
-        <label for="jackett-proxy-port">Proxy port:</label>
+        <label for="jackett-proxy-port">{{ $t('server.proxyPort') }}</label>
         <InputNumber id="jackett-proxy-port" :model-value="draft.proxy_port" :use-grouping="false" class="field-input" @update:model-value="(v) => setNumber('proxy_port', v as number | null)" />
       </div>
       <div class="field">
-        <label for="jackett-proxy-username">Proxy username:</label>
+        <label for="jackett-proxy-username">{{ $t('server.proxyUsername') }}</label>
         <InputText id="jackett-proxy-username" v-model="draft.proxy_username" class="field-input" />
       </div>
       <div class="field">
-        <label for="jackett-proxy-password">Proxy password:</label>
+        <label for="jackett-proxy-password">{{ $t('server.proxyPassword') }}</label>
         <Password id="jackett-proxy-password" v-model="draft.proxy_password" :feedback="false" toggle-mask class="field-input" input-class="w-full" />
       </div>
     </fieldset>
 
     <fieldset class="section">
-      <legend>FlareSolverr</legend>
+      <legend>{{ $t('server.sectionFlare') }}</legend>
       <Message v-if="sectionError('flaresolverr')" severity="error" :closable="false" class="section-alert">
         {{ sectionError('flaresolverr') }}
       </Message>
       <div class="field">
-        <label for="jackett-flaresolverrurl">FlareSolverr API URL:</label>
-        <InputText id="jackett-flaresolverrurl" v-model="draft.flaresolverrurl" placeholder="Blank for default" class="field-input" />
+        <label for="jackett-flaresolverrurl">{{ $t('server.flareUrl') }}</label>
+        <InputText id="jackett-flaresolverrurl" v-model="draft.flaresolverrurl" :placeholder="$t('server.blankDefault')" class="field-input" />
       </div>
       <div class="field">
-        <label for="jackett-flaresolverr-maxtimeout">FlareSolverr Max Timeout (ms):</label>
+        <label for="jackett-flaresolverr-maxtimeout">{{ $t('server.flareTimeout') }}</label>
         <InputNumber id="jackett-flaresolverr-maxtimeout" :model-value="draft.flaresolverr_maxtimeout" :use-grouping="false" class="field-input" @update:model-value="(v) => setNumber('flaresolverr_maxtimeout', v as number | null)" />
       </div>
     </fieldset>
 
     <fieldset class="section">
-      <legend>OMDb</legend>
+      <legend>{{ $t('server.sectionOmdb') }}</legend>
       <Message v-if="sectionError('omdb')" severity="error" :closable="false" class="section-alert">
         {{ sectionError('omdb') }}
       </Message>
       <div class="field">
-        <label for="jackett-omdbkey">OMDB API key:</label>
+        <label for="jackett-omdbkey">{{ $t('server.omdbKey') }}</label>
         <InputText id="jackett-omdbkey" v-model="draft.omdbkey" class="field-input" />
       </div>
       <div class="field">
-        <label for="jackett-omdburl">OMDB API Url:</label>
-        <InputText id="jackett-omdburl" v-model="draft.omdburl" placeholder="Blank for default" class="field-input" />
+        <label for="jackett-omdburl">{{ $t('server.omdbUrl') }}</label>
+        <InputText id="jackett-omdburl" v-model="draft.omdburl" :placeholder="$t('server.blankDefault')" class="field-input" />
       </div>
     </fieldset>
 
     <fieldset class="section">
-      <legend>Update</legend>
+      <legend>{{ $t('server.sectionUpdate') }}</legend>
       <Message v-if="sectionError('update')" severity="error" :closable="false" class="section-alert">
         {{ sectionError('update') }}
       </Message>
       <div class="field">
-        <label for="jackett-allowupdate">Disable auto update:</label>
+        <label for="jackett-allowupdate">{{ $t('server.disableUpdate') }}</label>
         <Checkbox id="jackett-allowupdate" v-model="draft.updatedisabled" binary />
       </div>
       <div class="field">
-        <label for="jackett-prerelease">Update to pre-release:</label>
+        <label for="jackett-prerelease">{{ $t('server.prerelease') }}</label>
         <Checkbox id="jackett-prerelease" v-model="draft.prerelease" binary />
       </div>
       <div class="field">
         <span />
         <Button
-          label="Check for updates"
+          :label="$t('server.checkUpdates')"
           icon="pi pi-refresh"
           severity="warning"
           size="small"
@@ -312,14 +314,14 @@ function setNumber(key: NumberKey, value: number | null | undefined): void {
 
     <div class="form-actions">
       <Button
-        label="Apply server settings"
+        :label="$t('server.apply')"
         icon="pi pi-wrench"
         :loading="settings.saving"
         @click="save"
       />
     </div>
   </div>
-  <p v-else class="config-loading">Loading server configuration…</p>
+  <p v-else class="config-loading">{{ $t('server.loading') }}</p>
 </template>
 
 <style scoped>
@@ -332,7 +334,7 @@ function setNumber(key: NumberKey, value: number | null | undefined): void {
   font-weight: 600;
 }
 .section {
-  border: 1px solid var(--p-surface-200);
+  border: 1px solid var(--p-content-border-color);
   border-radius: 6px;
   padding: 0.75rem 1rem 1rem;
   display: flex;

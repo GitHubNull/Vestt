@@ -2,6 +2,7 @@
 import Badge from 'primevue/badge'
 import Select from 'primevue/select'
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { IndexerDTO } from '../../services/types'
 import type { IndexerFilters } from '../../stores/indexers'
 
@@ -14,19 +15,21 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ 'update:modelValue': [IndexerFilters] }>()
 
-const TYPE_OPTIONS = [
-  { label: 'All', value: 'all' },
-  { label: 'Public', value: 'public' },
-  { label: 'Semi-Private', value: 'semi-private' },
-  { label: 'Private', value: 'private' },
-]
+const { t } = useI18n()
 
-const STATE_OPTIONS = [
-  { label: 'All', value: 'all' },
-  { label: 'Healthy', value: 'healthy' },
-  { label: 'Failing', value: 'failing' },
-  { label: 'Untested', value: 'untested' },
-]
+const TYPE_OPTIONS = computed(() => [
+  { label: t('filters.all'), value: 'all' },
+  { label: t('filters.public'), value: 'public' },
+  { label: t('filters.semiPrivate'), value: 'semi-private' },
+  { label: t('filters.private'), value: 'private' },
+])
+
+const STATE_OPTIONS = computed(() => [
+  { label: t('filters.all'), value: 'all' },
+  { label: t('filters.healthy'), value: 'healthy' },
+  { label: t('filters.failing'), value: 'failing' },
+  { label: t('filters.untested'), value: 'untested' },
+])
 
 interface Option {
   label: string
@@ -51,23 +54,23 @@ const mergedTags = computed<string[]>(() => {
 })
 
 const typeOptions = computed<Option[]>(() =>
-  TYPE_OPTIONS.map((o) => ({
+  TYPE_OPTIONS.value.map((o) => ({
     ...o,
     count: o.value === 'all' ? props.indexers.length : countBy((i) => i.type === o.value),
   })),
 )
 
 const tagOptions = computed<Option[]>(() => [
-  { label: 'All', value: 'all', count: props.indexers.length },
-  ...mergedTags.value.map((t) => ({
-    label: t,
-    value: t,
-    count: countBy((i) => i.tags.some((x) => x.toLowerCase() === t.toLowerCase())),
+  { label: t('filters.all'), value: 'all', count: props.indexers.length },
+  ...mergedTags.value.map((tag) => ({
+    label: tag,
+    value: tag,
+    count: countBy((i) => i.tags.some((x) => x.toLowerCase() === tag.toLowerCase())),
   })),
 ])
 
 const stateOptions = computed<Option[]>(() =>
-  STATE_OPTIONS.map((o) => ({
+  STATE_OPTIONS.value.map((o) => ({
     ...o,
     count:
       o.value === 'all'
@@ -88,7 +91,7 @@ function update(patch: Partial<IndexerFilters>) {
 <template>
   <div class="indexer-filters">
     <div class="filter-field">
-      <label>Type</label>
+      <label>{{ $t('filters.type') }}</label>
       <Select
         :model-value="modelValue.type"
         :options="typeOptions"
@@ -103,7 +106,7 @@ function update(patch: Partial<IndexerFilters>) {
       </Select>
     </div>
     <div class="filter-field">
-      <label>Tag</label>
+      <label>{{ $t('filters.tag') }}</label>
       <Select
         :model-value="modelValue.tag"
         :options="tagOptions"
@@ -118,13 +121,13 @@ function update(patch: Partial<IndexerFilters>) {
       </Select>
     </div>
     <div class="filter-field">
-      <label>Status</label>
+      <label>{{ $t('filters.status') }}</label>
       <Select
         :model-value="modelValue.state"
         :options="stateOptions"
         option-label="label"
         option-value="value"
-        @update:model-value="update({ state: $event })"
+        @update:model-value="update({ state: $event as IndexerFilters['state'] })"
       >
         <template #option="{ option }">
           <span>{{ option.label }}</span>

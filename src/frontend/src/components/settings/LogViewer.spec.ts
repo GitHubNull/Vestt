@@ -5,6 +5,7 @@ import Select from 'primevue/select'
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CachedLog } from '../../services/types'
+import { i18n } from '../../i18n'
 import LogViewer from './LogViewer.vue'
 
 // SPEC-13 §5.3: LogViewer polling toggle — manual refresh by default, a 10 s
@@ -30,7 +31,7 @@ function stubLogsFetch() {
 
 function mountViewer() {
   return mount(LogViewer, {
-    global: { plugins: [PrimeVue, createPinia()] },
+    global: { plugins: [PrimeVue, i18n, createPinia()] },
   })
 }
 

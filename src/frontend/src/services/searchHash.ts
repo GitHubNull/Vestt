@@ -19,9 +19,9 @@ export function parseSearchHash(hash: string): SearchDeepLink | null {
   // main.ts) — tolerate the injected leading slash.
   const body = (hash.startsWith('#') ? hash.slice(1) : hash).replace(/^\/+/, '')
   if (body === '') return null
-  // route hashes carry their query in-fragment (`#/dashboard?search=1` was
-  // the SPEC-12 stub) — those are not search deep links.
-  if (/^(dashboard|login)([/?]|$)/.test(body)) return null
+  // route hashes carry their query in-fragment — those are not search deep
+  // links. Keep in sync with the real route table.
+  if (/^(home|login|indexers|settings|dashboard)([/?]|$)/.test(body)) return null
   const params = new URLSearchParams(body)
   if (!params.has('search')) return null
   const trackerParam = params.get('tracker')
@@ -109,4 +109,40 @@ export function restoreSearchHash(hash: string): void {
   if (typeof window === 'undefined') return
   const withHash = hash.startsWith('#') ? hash : `#${hash}`
   window.history.replaceState(null, '', withHash)
+}
+
+// --- indexer filter deep link (upstream #indexers=1&filter=<json>) -----------
+// The bare fragment is not a route, so the router's catch-all rewrites the
+// hash before any component mounts. main.ts stashes it in sessionStorage;
+// the router guard consumes it and navigates to /indexers with the filter in
+// the route query (the same shape in-route URLs already use).
+
+export interface IndexersDeepLink {
+  filter: string | null
+}
+
+export function parseIndexersHash(hash: string): IndexersDeepLink | null {
+  const body = (hash.startsWith('#') ? hash.slice(1) : hash).replace(/^\/+/, '')
+  if (body === '') return null
+  // in-route `#/indexers?indexers=1…` is handled natively by the route query.
+  if (/^indexers([/?]|$)/.test(body)) return null
+  const params = new URLSearchParams(body)
+  if (!params.has('indexers')) return null
+  return { filter: params.get('filter') }
+}
+
+export const PENDING_INDEXERS_HASH_KEY = 'vestt.pendingIndexersHash'
+
+export function capturePendingIndexersHash(hash: string): void {
+  if (typeof window === 'undefined') return
+  if (parseIndexersHash(hash)) {
+    window.sessionStorage.setItem(PENDING_INDEXERS_HASH_KEY, hash)
+  }
+}
+
+export function consumePendingIndexersHash(): IndexersDeepLink | null {
+  if (typeof window === 'undefined') return null
+  const raw = window.sessionStorage.getItem(PENDING_INDEXERS_HASH_KEY)
+  window.sessionStorage.removeItem(PENDING_INDEXERS_HASH_KEY)
+  return raw ? parseIndexersHash(raw) : null
 }

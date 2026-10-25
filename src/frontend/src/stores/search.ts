@@ -11,12 +11,13 @@ import type { ManualSearchIndexerState, TrackerCacheResult } from '../services/t
 
 // SPEC-13 §3.1: manual search state machine (idle/loading/done/error) +
 // structured presets (SPEC §3.1.5, localStorage `vestt.presets`).
+// The store is visibility-agnostic: HomeView owns the form and renders the
+// results inline (UI 改版: the search dialog was retired).
 
 export type SearchRunStatus = 'idle' | 'loading' | 'done' | 'error'
 
 export const useSearchStore = defineStore('search', {
   state: () => ({
-    visible: false,
     query: '',
     categories: [] as number[],
     trackers: [] as string[],
@@ -37,14 +38,12 @@ export const useSearchStore = defineStore('search', {
     },
   },
   actions: {
-    open(preset?: { query?: string; trackers?: string[]; categories?: number[] }): void {
+    /** Applies deep-link / handoff params (query/trackers/categories)
+     *  without touching any UI state — the home page renders results. */
+    applyParams(preset?: { query?: string; trackers?: string[]; categories?: number[] }): void {
       if (preset?.query !== undefined) this.query = preset.query
       if (preset?.trackers) this.setTrackers(preset.trackers)
       if (preset?.categories) this.categories = [...preset.categories]
-      this.visible = true
-    },
-    close(): void {
-      this.visible = false
     },
     setTrackers(trackers: string[]): void {
       this.trackers = [...trackers]

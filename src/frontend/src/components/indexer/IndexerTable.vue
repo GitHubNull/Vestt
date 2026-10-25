@@ -4,6 +4,7 @@ import Button from 'primevue/button'
 import Column from 'primevue/column'
 import DataTable from 'primevue/datatable'
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import CopyButton from '../common/CopyButton.vue'
 import { getBasePath } from '../../services/api'
 import { badgeOf } from '../../stores/indexers'
@@ -11,7 +12,7 @@ import type { IndexerDTO } from '../../services/types'
 import type { TestRunState } from '../../stores/indexers'
 
 // Configured / unconfigured indexer tables (SPEC-12 §3.1). Purely
-// presentational: every mutation is emitted and owned by the dashboard.
+// presentational: every mutation is emitted and owned by the indexers view.
 
 const props = defineProps<{
   indexers: IndexerDTO[]
@@ -29,24 +30,23 @@ const emit = defineEmits<{
   addSelected: [ids: string[]]
 }>()
 
+const { t } = useI18n()
 const selected = ref<IndexerDTO[]>([])
 
-const heading = computed(
-  () => `Showing ${props.indexers.length} of ${props.total}`,
+const heading = computed(() =>
+  t('indexerTable.showing', { shown: props.indexers.length, total: props.total }),
 )
 
 const emptyText = computed(() =>
-  props.mode === 'configured'
-    ? 'No indexers configured yet.'
-    : 'All indexers are configured.',
+  props.mode === 'configured' ? t('indexerTable.emptyConfigured') : t('indexerTable.emptyUnconfigured'),
 )
 
 function badge(indexer: IndexerDTO) {
   const state = badgeOf(indexer, props.testStates[indexer.id])
   return {
-    healthy: { label: 'Healthy', severity: 'success' as const },
-    failing: { label: 'Failing', severity: 'danger' as const },
-    untested: { label: 'Untested', severity: 'secondary' as const },
+    healthy: { label: t('filters.healthy'), severity: 'success' as const },
+    failing: { label: t('filters.failing'), severity: 'danger' as const },
+    untested: { label: t('filters.untested'), severity: 'secondary' as const },
   }[state]
 }
 
@@ -90,7 +90,7 @@ function addSelected(): void {
       <div class="toolbar-actions">
         <Button
           v-if="mode === 'configured' && total > 0"
-          label="Test All"
+          :label="$t('indexerTable.testAll')"
           icon="pi pi-bolt"
           size="small"
           severity="warning"
@@ -99,7 +99,7 @@ function addSelected(): void {
         />
         <Button
           v-if="mode === 'unconfigured'"
-          label="Add Selected"
+          :label="$t('indexerTable.addSelected')"
           icon="pi pi-plus"
           size="small"
           :disabled="selected.length === 0"
@@ -129,7 +129,7 @@ function addSelected(): void {
         header-style="width: 3rem"
       />
 
-      <Column v-if="mode === 'configured'" header="Status" header-style="width: 6rem">
+      <Column v-if="mode === 'configured'" :header="$t('indexerTable.status')" header-style="width: 6rem">
         <template #body="{ data }">
           <span :title="data.last_error ?? ''">
             <Badge :value="badge(data).label" :severity="badge(data).severity" />
@@ -137,7 +137,7 @@ function addSelected(): void {
         </template>
       </Column>
 
-      <Column field="name" header="Indexer" sortable>
+      <Column field="name" :header="$t('indexerTable.indexer')" sortable>
         <template #body="{ data }">
           <a
             :href="data.site_link"
@@ -148,7 +148,7 @@ function addSelected(): void {
         </template>
       </Column>
 
-      <Column field="type" header="Type" header-style="width: 7rem">
+      <Column field="type" :header="$t('indexerTable.type')" header-style="width: 7rem">
         <template #body="{ data }">
           <Badge
             :value="data.type"
@@ -158,9 +158,9 @@ function addSelected(): void {
         </template>
       </Column>
 
-      <Column field="language" header="Language" header-style="width: 7rem" />
+      <Column field="language" :header="$t('indexerTable.language')" header-style="width: 7rem" />
 
-      <Column header="Tags" header-style="width: 10rem">
+      <Column :header="$t('indexerTable.tags')" header-style="width: 10rem">
         <template #body="{ data }">
           <span v-for="tag in data.tags" :key="tag" class="tag-chip" :title="tag">{{ tag }}</span>
         </template>
@@ -168,24 +168,24 @@ function addSelected(): void {
 
       <Column
         v-if="mode === 'configured'"
-        header="Caps"
+        :header="$t('indexerTable.caps')"
         header-style="width: 5rem"
       >
         <template #body="{ data }">{{ data.caps.length }}</template>
       </Column>
 
-      <Column header-style="width: 1%" :header="mode === 'configured' ? 'Actions' : ''">
+      <Column header-style="width: 1%" :header="mode === 'configured' ? $t('indexerTable.actions') : ''">
         <template #body="{ data }">
           <div class="indexer-buttons">
             <CopyButton
               v-if="mode === 'configured'"
               :text="torznabUrl(data)"
-              title="Copy Torznab Feed"
+              :title="$t('indexerTable.copyTorznab')"
             />
             <Button
               v-if="mode === 'configured'"
               icon="pi pi-search"
-              title="Search"
+              :title="$t('indexerTable.search')"
               severity="success"
               size="small"
               outlined
@@ -193,7 +193,7 @@ function addSelected(): void {
             />
             <Button
               icon="pi pi-cog"
-              :title="mode === 'configured' ? 'Configure' : 'Configure'"
+              :title="$t('indexerTable.configure')"
               size="small"
               outlined
               @click="emit('configure', data)"
@@ -201,18 +201,18 @@ function addSelected(): void {
             <Button
               v-if="mode === 'configured'"
               :icon="testIcon(data)"
-              :title="data.last_error ?? 'Test'"
+              :title="data.last_error ?? $t('indexerTable.test')"
               :loading="testStates[data.id] === 'running'"
               severity="warning"
               size="small"
               outlined
-              label="Test"
+              :label="$t('indexerTable.test')"
               @click="emit('test', data)"
             />
             <Button
               v-if="mode === 'configured'"
               icon="pi pi-trash"
-              title="Delete"
+              :title="$t('indexerTable.delete')"
               severity="danger"
               size="small"
               outlined

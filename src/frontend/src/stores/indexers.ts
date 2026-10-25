@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { i18n } from '../i18n'
 import { notify } from '../components/common/notify'
 import {
   deleteIndexer,
@@ -263,9 +264,9 @@ export const useIndexersStore = defineStore('indexers', {
     async remove(id: string): Promise<void> {
       try {
         await deleteIndexer(id)
-        notify.success(`Deleted ${id}`)
+        notify.success(i18n.global.t('indexersView.deleted', { name: id }))
       } catch (err) {
-        notify.danger(`Delete error for ${id}\n${errMessage(err)}`)
+        notify.danger(i18n.global.t('indexersView.deleteError', { name: id, message: errMessage(err) }))
       } finally {
         await this.load(true)
       }
@@ -274,17 +275,17 @@ export const useIndexersStore = defineStore('indexers', {
     /** Batch-add unconfigured indexers with their default (fetched) config
      * (upstream addIndexers/addIndexer, custom.js:512-574). */
     async addIndexers(ids: string[]): Promise<void> {
-      notify.info('Adding selected Indexers, please wait...', true)
+      notify.info(i18n.global.t('indexersView.addingSelected'), true)
       for (const id of ids) {
         try {
           const fields = await getIndexerConfig(id)
           await postIndexerConfig(id, buildConfigItems(fields, initialValues(fields)))
-          notify.success(`Successfully configured ${id}`)
+          notify.success(i18n.global.t('configDialog.configured', { name: id }))
         } catch (err) {
-          notify.danger(`Configuration failed: ${errMessage(err)}`)
+          notify.danger(i18n.global.t('configDialog.configFailed', { message: errMessage(err) }))
         }
       }
-      notify.success('Selected indexers successfully added.')
+      notify.success(i18n.global.t('indexersView.batchAdded'))
       await this.load(true)
     },
 

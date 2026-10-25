@@ -19,7 +19,7 @@ async function submit() {
   try {
     const ok = await auth.login(password.value)
     if (ok) {
-      router.push({ name: 'dashboard' })
+      router.push({ name: 'home' })
     }
     password.value = ''
   } finally {
@@ -30,11 +30,11 @@ async function submit() {
 
 <template>
   <main class="login-shell">
-    <div class="login-card">
+    <div class="login-card glass-card">
       <h1 class="login-title">Vestt</h1>
-      <h2 class="login-subtitle">Login</h2>
+      <h2 class="login-subtitle">{{ $t('login.subtitle') }}</h2>
       <form class="login-form" @submit.prevent="submit">
-        <label class="login-label" for="admin-password">Admin password</label>
+        <label class="login-label" for="admin-password">{{ $t('login.password') }}</label>
         <Password
           id="admin-password"
           v-model="password"
@@ -45,7 +45,7 @@ async function submit() {
           @keyup.enter="submit"
         />
         <InputText v-show="false" type="text" name="username" autocomplete="username" />
-        <Button type="submit" label="Login" :loading="submitting" />
+        <Button type="submit" :label="$t('login.submit')" :loading="submitting" />
       </form>
     </div>
   </main>
@@ -57,12 +57,8 @@ async function submit() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--p-surface-100);
 }
 .login-card {
-  background: var(--p-surface-0);
-  border-radius: var(--p-border-radius-lg);
-  box-shadow: var(--p-shadow-lg);
   padding: 2.5rem 3rem;
   min-width: 22rem;
 }

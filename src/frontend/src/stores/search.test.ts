@@ -5,9 +5,10 @@ import { _resetForTests, initBasePath } from '../services/api'
 import type { ManualSearchResult } from '../services/types'
 import { useSearchStore } from './search'
 
-// SPEC-13 §5.3: SearchDialog state machine — idle/loading/done/error,
-// aggregate request URL (query/trackers/categories), preset save/apply/
-// delete with overwrite-by-name persistence.
+// SPEC-13 §5.3: search state machine — idle/loading/done/error, aggregate
+// request URL (query/trackers/categories), preset save/apply/delete with
+// overwrite-by-name persistence. The store is visibility-agnostic (results
+// render inline on the home page since the UI rework).
 
 function searchResponse(): ManualSearchResult {
   return {
@@ -56,10 +57,9 @@ describe('search store (SPEC-13 §3.1)', () => {
     expect(store.results).toEqual([])
   })
 
-  it('open() applies the preset fields and shows the dialog', () => {
+  it('applyParams() applies the deep-link fields', () => {
     const store = useSearchStore()
-    store.open({ query: 'matrix', trackers: ['0magnet'], categories: [2000] })
-    expect(store.visible).toBe(true)
+    store.applyParams({ query: 'matrix', trackers: ['0magnet'], categories: [2000] })
     expect(store.query).toBe('matrix')
     expect(store.trackers).toEqual(['0magnet'])
     expect(store.categories).toEqual([2000])
@@ -92,7 +92,7 @@ describe('search store (SPEC-13 §3.1)', () => {
     expect(url).toContain('Category%5B%5D=2000')
   })
 
-  it('run() failure lands in error without clobbering visibility', async () => {
+  it('run() failure lands in error and clears results', async () => {
     const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(new Response('boom', { status: 500 })))
     vi.stubGlobal('fetch', fetchMock)
     const store = useSearchStore()

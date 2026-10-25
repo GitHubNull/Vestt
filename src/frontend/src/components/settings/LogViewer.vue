@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import Button from 'primevue/button'
 import Select from 'primevue/select'
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { LOG_PAGE_SIZE, useLogsStore } from '../../stores/logs'
 import type { CachedLog } from '../../services/types'
 
@@ -9,15 +10,16 @@ import type { CachedLog } from '../../services/types'
 // refresh + 10 s polling toggle, "load earlier" client-side pagination
 // (the backend ring buffer returns the full buffer newest-first).
 
+const { t } = useI18n()
 const logs = useLogsStore()
 
 const POLL_INTERVAL_MS = 10000
 const polling = ref(false)
-const options = [
-  { label: 'Manual refresh', value: false },
-  { label: 'Refresh every 10 seconds', value: true },
-]
-const pollingMode = ref({ label: 'Manual refresh', value: false })
+const options = computed(() => [
+  { label: t('logs.manual'), value: false },
+  { label: t('logs.every10s'), value: true },
+])
+const pollingMode = ref<{ label: string; value: boolean }>({ label: '', value: false })
 
 let timer: ReturnType<typeof setInterval> | null = null
 
@@ -61,6 +63,7 @@ function formatWhen(entry: CachedLog): string {
 }
 
 onMounted(() => {
+  pollingMode.value = { label: t('logs.manual'), value: false }
   void logs.load()
 })
 
@@ -83,7 +86,7 @@ defineExpose({ refresh })
       />
       <Button
         icon="pi pi-refresh"
-        label="Refresh"
+        :label="$t('logs.refresh')"
         size="small"
         outlined
         :loading="logs.loading"
@@ -92,7 +95,7 @@ defineExpose({ refresh })
     </div>
 
     <div v-if="!logs.loading && logs.entries.length === 0" class="log-empty">
-      No log entries.
+      {{ $t('logs.empty') }}
     </div>
 
     <table v-else class="log-table">
@@ -109,7 +112,7 @@ defineExpose({ refresh })
 
     <Button
       v-if="logs.hasMore"
-      label="Load earlier entries"
+      :label="$t('logs.loadEarlier')"
       icon="pi pi-angle-up"
       size="small"
       text
@@ -117,7 +120,7 @@ defineExpose({ refresh })
       @click="logs.showMore()"
     />
     <p v-else-if="logs.entries.length > LOG_PAGE_SIZE" class="log-end">
-      All {{ logs.entries.length }} entries shown.
+      {{ $t('logs.allShown', { count: logs.entries.length }) }}
     </p>
   </div>
 </template>

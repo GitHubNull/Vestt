@@ -1,5 +1,29 @@
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
+  /* light-mode liquid glass palette (default) */
+  --glass-card-bg: rgba(255, 255, 255, 0.55);
+  --glass-card-border: rgba(255, 255, 255, 0.85);
+  --glass-card-shadow:
+    0 8px 32px rgba(31, 41, 82, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --glass-nav-bg: rgba(255, 255, 255, 0.6);
+  --glass-nav-border: rgba(255, 255, 255, 0.75);
+  /* sticky 表头底色（SearchResultTable）：磨砂/实色两档 */
+  --results-head-bg: rgba(255, 255, 255, 0.66);
+  --results-head-bg-solid: #eef1f8;
+}
+
+html.vestt-dark {
+  color-scheme: dark;
+  --glass-card-bg: rgba(255, 255, 255, 0.055);
+  --glass-card-border: rgba(255, 255, 255, 0.1);
+  --glass-card-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --glass-nav-bg: rgba(10, 12, 18, 0.65);
+  --glass-nav-border: rgba(255, 255, 255, 0.08);
+  --results-head-bg: rgba(14, 18, 27, 0.72);
+  --results-head-bg-solid: #161c28;
 }
 
 * {
@@ -8,4 +32,53 @@
 
 body {
   margin: 0;
+  min-height: 100vh;
+  /* opaque gradient backdrop — glass blur needs something behind the cards */
+  background:
+    radial-gradient(1200px 800px at 15% -10%, rgba(99, 102, 241, 0.16), transparent 60%),
+    radial-gradient(1000px 700px at 110% 10%, rgba(14, 165, 233, 0.12), transparent 55%),
+    radial-gradient(900px 900px at 50% 115%, rgba(168, 85, 247, 0.1), transparent 60%),
+    linear-gradient(160deg, #f2f4fb 0%, #eceff8 55%, #f4f2fb 100%);
+  background-attachment: fixed;
+  color: var(--p-text-color);
+  font-family: var(--p-font-family);
+}
+
+html.vestt-dark body {
+  background:
+    radial-gradient(1200px 800px at 15% -10%, rgba(99, 102, 241, 0.22), transparent 60%),
+    radial-gradient(1000px 700px at 110% 10%, rgba(14, 165, 233, 0.15), transparent 55%),
+    radial-gradient(900px 900px at 50% 115%, rgba(168, 85, 247, 0.12), transparent 60%),
+    linear-gradient(160deg, #0b0e17 0%, #0a0c12 55%, #07080d 100%);
+}
+
+/* Liquid glass surfaces (UI 改版 theme) */
+.glass-card {
+  background: var(--glass-card-bg);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid var(--glass-card-border);
+  border-radius: var(--p-content-border-radius);
+  box-shadow: var(--glass-card-shadow);
+}
+
+.glass-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--glass-nav-bg);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border-bottom: 1px solid var(--glass-nav-border);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  :root {
+    --glass-card-bg: rgba(255, 255, 255, 0.92);
+    --glass-nav-bg: rgba(255, 255, 255, 0.95);
+  }
+  html.vestt-dark {
+    --glass-card-bg: rgba(20, 24, 34, 0.92);
+    --glass-nav-bg: rgba(10, 12, 18, 0.95);
+  }
 }
