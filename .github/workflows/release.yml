@@ -1,0 +1,194 @@
+# 语义化 tag 触发的自动发布流水线（GitHub Release + ghcr.io 镜像）。
+# 触发：仅 vX.Y.Z（正式 Release）与 vX.Y.Z-*（预发布，Prerelease）两种 tag；
+# 其余 push/PR 走 ci.yml 门禁，与本流水线互不触发。
+# 产物：6 平台内嵌前端的单二进制 + 前端静态包 vestt-web + SHA256SUMS（make release），
+#       以及 ghcr.io/<owner>/vestt 的 linux/amd64+arm64 多架构镜像（正式版另刷 :latest）。
+# 权限：contents:write（创建 Release）+ packages:write（推 ghcr），均用内置 GITHUB_TOKEN。
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'     # 正式版：v1.2.3
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'   # 预发布：v1.2.3-beta.1 / -rc.1 等
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false # 发布流水线不打断：同 tag 重推时保留已上传产物
+
+jobs:
+  validate:
+    name: Validate semver tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      version: ${{ steps.meta.outputs.version }}
+      prerelease: ${{ steps.meta.outputs.prerelease }}
+    steps:
+      - name: 严格 semver 校验（双保险，trigger pattern 之外再卡一道）
+        id: meta
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          # 官方 semver 2.0.0 正则（含 prerelease/build 段），要求 v 前缀
+          SEMVER_RE='^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-(0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*)?(\+[0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*)?$'
+          if ! printf '%s' "$TAG" | grep -Eq "$SEMVER_RE"; then
+            echo "::error::tag '$TAG' 不是合法语义化版本（要求 vX.Y.Z，可带 -prerelease/+build）"
+            exit 1
+          fi
+          VERSION="${TAG#v}"
+          # 去掉 +build 元数据后判断是否含 prerelease 段
+          PRERELEASE=false
+          case "${TAG%%+*}" in
+            *-*) PRERELEASE=true ;;
+          esac
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG version=$VERSION prerelease=$PRERELEASE"
+
+  release:
+    name: Binaries + GitHub Release
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # notes.md 需要完整 tag 历史定位上一版本
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: src/backend/go.mod
+          cache-dependency-path: src/backend/go.sum
+
+      # 与 ci.yml 同套前端工具链（package.json 无 packageManager 字段 → 显式 pin pnpm v10）
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: src/frontend/pnpm-lock.yaml
+
+      # 6 平台单二进制（内嵌前端）+ vestt-web 静态包 + SHA256SUMS
+      - name: make release
+        run: make release VERSION=${{ needs.validate.outputs.version }}
+
+      # 制品冒烟：启动 linux-amd64 二进制，/health 版本号必须等于注入版本
+      # （同时证明 ldflags 注入与 go:embed 前端均生效）
+      - name: Binary smoke（/health version 断言）
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          set -euo pipefail
+          BIN="dist/release/vestt-v${VERSION}-linux-amd64"
+          chmod +x "$BIN"
+          TMP="$(mktemp -d)"
+          "$BIN" --data-dir "$TMP" --port 19199 &
+          PID=$!
+          trap 'kill "$PID" 2>/dev/null || true' EXIT
+          BODY=""
+          for _ in $(seq 1 15); do
+            if BODY="$(curl -fsS http://127.0.0.1:19199/health 2>/dev/null)"; then
+              break
+            fi
+            sleep 1
+          done
+          echo "health: $BODY"
+          printf '%s' "$BODY" | grep -F "\"version\":\"${VERSION}\""
+
+      # Release notes：上一 tag 以来的提交清单 + Docker 拉取地址
+      - name: Generate notes.md
+        env:
+          TAG: ${{ needs.validate.outputs.tag }}
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          set -euo pipefail
+          REPO_LC="${GITHUB_REPOSITORY,,}"
+          PREV="$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || true)"
+          {
+            if [ -n "$PREV" ]; then
+              echo "## 变更（${PREV} → ${TAG}）"
+              echo
+              git log --oneline --no-decorate "${PREV}..${TAG}"
+            else
+              echo "首个发布版本 ${TAG}。"
+            fi
+            echo
+            echo "## Docker"
+            echo
+            echo '```bash'
+            echo "docker pull ghcr.io/${REPO_LC}:${VERSION}"
+            echo '```'
+          } > notes.md
+          cat notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ needs.validate.outputs.tag }}
+          body_path: notes.md
+          prerelease: ${{ needs.validate.outputs.prerelease }}
+          files: dist/release/**
+
+      - name: Upload artifacts（workflow 内备份）
+        uses: actions/upload-artifact@v4
+        with:
+          name: vestt-release-v${{ needs.validate.outputs.version }}
+          path: dist/release/
+          if-no-files-found: error
+
+  docker:
+    name: Docker image（ghcr.io 多架构）
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      # 内置 GITHUB_TOKEN + packages:write 权限，无需配置任何 secret
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # 恒推 :<version>；仅正式版追加 :latest（预发布不刷 latest，避免自动化误升级）
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ghcr.io/${{ github.repository }}
+          flavor: |
+            latest=false
+          tags: |
+            type=raw,value=${{ needs.validate.outputs.version }}
+            type=raw,value=latest,enable=${{ needs.validate.outputs.prerelease == 'false' }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            VESTT_VERSION=${{ needs.validate.outputs.version }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: 镜像拉取地址
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: echo "docker pull ghcr.io/${GITHUB_REPOSITORY,,}:${VERSION}"
