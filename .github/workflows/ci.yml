@@ -30,6 +30,21 @@ jobs:
           go-version-file: src/backend/go.mod
           cache-dependency-path: src/backend/go.sum
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: src/frontend/pnpm-lock.yaml
+
+      # server/static/dist 被 gitignore 排除（embed 产物）：全新检出必须先 make web，
+      # 否则 //go:embed all:dist 编译失败导致 lint/typecheck 全挂
+      - name: make web（前端构建 + rsync 进 embed 目录）
+        run: make web
+
       - name: gofmt check（gofmt -l 输出非空即失败）
         run: |
           unformatted="$(gofmt -l src/backend)"
@@ -80,9 +95,10 @@ jobs:
       # modernc.org/sqlite 纯 Go 实现（无 CGO），ubuntu runner 直接可用，无需服务容器；
       # 测试内 SQLite 使用系统临时目录（SPEC "test 含 SQLite 临时目录"），runner 默认 /tmp 即满足。
       # make test = 后端单测(覆盖率) + go vet + golangci-lint + 覆盖率阈值 + 前端 typecheck/eslint/vitest
-      - name: make test
+      # make web 含 pnpm install --frozen-lockfile + vite build + rsync embed（全新检出必需，见 lint job）
+      - name: make web && make test
         run: |
-          pnpm --dir src/frontend install --frozen-lockfile
+          make web
           make test
 
   build:
@@ -125,7 +141,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # 注意：test/smoke 目前仅有 doc.go 占位，本 job 待 test/smoke 冒烟测试落地后真正生效。
+    # L3 冒烟：构建产物启动 → /health → caps → 假站点搜索 → 下载代理 → 退出
     steps:
       - uses: actions/checkout@v4
 
