@@ -3,18 +3,25 @@ import Button from 'primevue/button'
 import Checkbox from 'primevue/checkbox'
 import Column from 'primevue/column'
 import DataTable from 'primevue/datatable'
+import InputText from 'primevue/inputtext'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { notify } from '../common/notify'
 import { absoluteDate, jacketSize, jacketTimespan } from '../../services/format'
 import { getBasePath } from '../../services/api'
+import { useResultsViewStore } from '../../stores/resultsView'
 import type { TrackerCacheResult } from '../../services/types'
+import { blackhole, externalIdLinks, filterByTitle, rowKey, titleLabels } from './releaseUtils'
+import SearchResultList from './SearchResultList.vue'
 
 // Result table (SPEC-13 §3.1.4) shared by the search home and the cached
 // releases view (§3.2, FirstSeen column). Column set and inline labels port
 // upstream updateSearchResultTable / updateReleasesRow (custom.js:1307-1457,
 // :969-1045); the dead-torrent filter matches upstream
 // showSearch's checkbox (custom.js:1300-1304).
+// UI 改版: the search home defaults to the DataView-style card list
+// (SearchResultList) with a toolbar toggle back to this table; the view mode
+// persists in localStorage (stores/resultsView). The cached releases view
+// (showFirstSeen) always uses the table and hides toggle/filter.
 
 const { t } = useI18n()
 const props = defineProps<{
@@ -23,12 +30,15 @@ const props = defineProps<{
   showFirstSeen?: boolean
 }>()
 
+const resultsView = useResultsViewStore()
 const showDead = ref(true)
+const titleFilter = ref('')
 const expanded = ref<Record<string, boolean>>({})
 
-const rows = computed(() =>
-  showDead.value ? props.results : props.results.filter((r) => (r.Seeders ?? 0) !== 0),
-)
+const rows = computed(() => {
+  const alive = showDead.value ? props.results : props.results.filter((r) => (r.Seeders ?? 0) !== 0)
+  return filterByTitle(alive, titleFilter.value)
+})
 
 const heading = computed(() =>
   t('results.showing', { shown: rows.value.length, total: props.results.length }),
@@ -36,54 +46,6 @@ const heading = computed(() =>
 
 // PrimeVue row expansion/expansion state keys off dataKey.
 const tableRows = computed(() => rows.value.map((r) => ({ ...r, __key: rowKey(r) })))
-
-function rowKey(r: TrackerCacheResult): string {
-  return `${r.TrackerId ?? r.Tracker ?? ''}-${r.Guid ?? r.Title}`
-}
-
-function titleLabels(r: TrackerCacheResult) {
-  const labels: { text: string; cls: string }[] = []
-  const dvf = r.DownloadVolumeFactor
-  if (dvf !== undefined && dvf !== null && !isNaN(dvf)) {
-    if (dvf === 0) labels.push({ text: 'FREELEECH', cls: 'label-success' })
-    else if (dvf < 1) labels.push({ text: `${(dvf * 100).toFixed(0)}%DL`, cls: 'label-primary' })
-    else if (dvf > 1) labels.push({ text: `${(dvf * 100).toFixed(0)}%DL`, cls: 'label-danger' })
-  }
-  const ulf = r.UploadVolumeFactor
-  if (ulf !== undefined && ulf !== null && !isNaN(ulf)) {
-    if (ulf === 0) labels.push({ text: 'NO UPLOAD', cls: 'label-warning' })
-    else if (ulf !== 1) labels.push({ text: `${(ulf * 100).toFixed(0)}%UL`, cls: 'label-info' })
-  }
-  return labels
-}
-
-function externalIdLinks(r: TrackerCacheResult) {
-  const links: { label: string; href: string }[] = []
-  if (r.Imdb) {
-    const len = String(r.Imdb).length > 7 ? 8 : 7
-    const id = 'tt' + ('00000000' + r.Imdb).slice(-len)
-    links.push({ label: 'IMDB', href: `https://www.imdb.com/title/${id}/` })
-  }
-  if (r.TMDb && r.TMDb > 0) {
-    const type = (r.CategoryDesc ?? '').includes('Movies') ? 'movie' : 'tv'
-    links.push({ label: 'TMDB', href: `https://www.themoviedb.org/${type}/${r.TMDb}` })
-  }
-  if (r.TVDBId && r.TVDBId > 0) {
-    links.push({ label: 'TVDB', href: `https://thetvdb.com/?tab=series&id=${r.TVDBId}` })
-  }
-  return links
-}
-
-async function blackhole(r: TrackerCacheResult): Promise<void> {
-  if (!r.BlackholeLink) return
-  try {
-    const res = await fetch(getBasePath() + r.BlackholeLink)
-    if (!res.ok) throw new Error(await res.text())
-    notify.success(t('results.blackholeOk'))
-  } catch (err) {
-    notify.danger(`Error: ${err instanceof Error ? err.message : String(err)}`)
-  }
-}
 
 function human(r: TrackerCacheResult): string {
   return jacketSize(r.Size)
@@ -111,6 +73,46 @@ function firstSeenRelative(r: TrackerCacheResult): string {
     <div class="table-toolbar">
       <p class="row-count">{{ heading }}</p>
       <div class="toolbar-actions">
+        <div v-if="!showFirstSeen" class="title-filter">
+          <InputText
+            v-model="titleFilter"
+            class="filter-input"
+            :placeholder="$t('results.filterPlaceholder')"
+            :aria-label="$t('results.filterPlaceholder')"
+          />
+          <Button
+            v-if="titleFilter"
+            icon="pi pi-times"
+            severity="secondary"
+            text
+            rounded
+            size="small"
+            class="filter-clear"
+            :aria-label="$t('results.filterClear')"
+            :title="$t('results.filterClear')"
+            @click="titleFilter = ''"
+          />
+        </div>
+        <div v-if="!showFirstSeen" class="view-toggle">
+          <Button
+            icon="pi pi-list"
+            text
+            size="small"
+            :severity="resultsView.view === 'list' ? 'primary' : 'secondary'"
+            :title="$t('results.viewList')"
+            :aria-pressed="resultsView.view === 'list'"
+            @click="resultsView.set('list')"
+          />
+          <Button
+            icon="pi pi-table"
+            text
+            size="small"
+            :severity="resultsView.view === 'table' ? 'primary' : 'secondary'"
+            :title="$t('results.viewTable')"
+            :aria-pressed="resultsView.view === 'table'"
+            @click="resultsView.set('table')"
+          />
+        </div>
         <label class="dead-filter">
           <Checkbox v-model="showDead" binary :input-id="`dead-${showFirstSeen ? 'cache' : 'search'}`" />
           <span>{{ $t('results.deadTorrents') }}</span>
@@ -119,6 +121,7 @@ function firstSeenRelative(r: TrackerCacheResult): string {
     </div>
 
     <DataTable
+      v-if="showFirstSeen || resultsView.view === 'table'"
       :value="tableRows"
       :loading="loading ?? false"
       size="small"
@@ -229,6 +232,12 @@ function firstSeenRelative(r: TrackerCacheResult): string {
         </div>
       </template>
     </DataTable>
+    <SearchResultList
+      v-else
+      :rows="tableRows"
+      :loading="loading ?? false"
+      v-model:expanded="expanded"
+    />
   </div>
 </template>
 
@@ -276,6 +285,19 @@ function firstSeenRelative(r: TrackerCacheResult): string {
 .toolbar-actions {
   display: flex;
   gap: 0.75rem;
+  align-items: center;
+}
+.title-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.filter-input {
+  width: 14rem;
+}
+.view-toggle {
+  display: flex;
+  gap: 0.15rem;
   align-items: center;
 }
 .dead-filter {

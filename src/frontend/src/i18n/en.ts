@@ -175,6 +175,10 @@ export default {
   results: {
     showing: 'Showing {shown} of {total}',
     deadTorrents: 'Show dead torrents',
+    viewList: 'List view',
+    viewTable: 'Table view',
+    filterPlaceholder: 'Filter results by title…',
+    filterClear: 'Clear filter',
     noResults: 'No results.',
     firstSeen: 'First Seen',
     published: 'Published',

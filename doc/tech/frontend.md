@@ -2,11 +2,17 @@
 
 | 项 | 内容 |
 |---|---|
-| 文档版本 | 1.2 |
+| 文档版本 | 1.3 |
 | 上游基线 | `src/Jackett.Common/Content/{index.html, custom.js, login.html}`（jQuery + Handlebars） |
 | 技术栈 | Vue 3.5 + TypeScript + Vite + PrimeVue 4.x + Pinia + Vue Router + vue-i18n + pnpm |
 | 接口契约 | [backend-api.md](backend-api.md)（本文不重复字段定义） |
 
+> **v1.3 改版说明（用户决策，有意偏离上游）**：搜索结果默认 DataView 风格 list 卡片视图
+> （SearchResultList：大缩略图 lazy 加载 + 分类/标题/彩色 label + 大小/S/L pill 徽标 + 操作，
+> 底部分页器 + 哨兵 IntersectionObserver 页内懒渲染防大结果集卡死）；工具栏可切回 DataTable，
+> 视图选择持久化 localStorage `vestt.results.view`（默认 list）；工具栏支持对已加载结果按标题
+> 本地二次过滤（不发后端请求）；切换与过滤仅首页搜索可见，缓存 releases 视图保持纯表格。
+>
 > **v1.2 改版说明（用户决策）**：设置入口收口——索引器与服务器子页全部收进齿轮菜单；
 > API Key 并入服务器配置页（不再是独立路由）；搜索框空态显示放大镜、有输入变一键清除；
 > 主题支持亮/暗切换（默认暗，localStorage `vestt.theme`）；引入 vue-i18n，**默认简体中文**，
@@ -34,7 +40,7 @@ src/frontend/
     ├── router/
     │   └── index.ts        # 多路由（见 §2）；守卫：深链拦截 + 会话探测
     ├── stores/             # Pinia
-    │   ├── auth.ts  config.ts  indexers.ts  search.ts  logs.ts  settings.ts  theme.ts
+    │   ├── auth.ts  config.ts  indexers.ts  search.ts  logs.ts  settings.ts  theme.ts  resultsView.ts
     ├── services/
     │   ├── api.ts          # fetch 封装（basePath、错误归一化）
     │   ├── types.ts        # 后端 DTO 的 TS 类型（与 backend-api.md 一一对应）
@@ -47,7 +53,8 @@ src/frontend/
     ├── components/
     │   ├── indexer/        # IndexerTable / IndexerFilters
     │   ├── config/         # IndexerConfigDialog / DynamicForm / DynamicField
-    │   ├── search/         # SearchResultTable / PresetBar（SearchDialog 已随改版退役）
+    │   ├── search/         # SearchResultTable（容器：工具栏+条件渲染）/ SearchResultList（v1.3 卡片视图）
+    │   │                   # / releaseUtils（共享纯函数：labels/links/rowKey/blackhole/filterByTitle）/ PresetBar
     │   ├── settings/       # ServerConfigForm / CacheReleases / LogViewer / ApiKeyPanel（并入服务器配置页）
     │   └── common/         # AppShell / CopyButton / Notify 适配
     └── views/
@@ -95,6 +102,7 @@ hash 历史路由（后端只在 `{base}/UI/Dashboard` 直出 SPA）：
 | `search` | query, categories[], trackers[], results[], indexerStates[] | `applyParams(preset)`, `run()`, `savePreset()` | `indexers/{id}/results` |
 | `logs` | entries[] | `load()`, `poll()` | `GET server/logs` |
 | `settings` | draft（服务器配置编辑态） | `open()`, `save()`, `changePassword()` | `GET/POST server/config` |
+| `resultsView` | view: `'list'\|'table'` | `set(view)` | localStorage `vestt.results.view`（默认 list，非法值回退） |
 
 原则：API 调用只出现在 stores/services；组件不直接 fetch。
 
@@ -114,9 +122,10 @@ App.vue
 │       │     高级行（tracker MultiSelect / category Select，可折叠）
 │       │     PresetBar（保存/加载预设 → localStorage `vestt.presets`）
 │       │     每索引器状态条（OK n [x ms] / Error / Unknown）
-│       │     SearchResultTable（DataTable 分页渲染）
-│       │       列：日期 · 标题(链到 Details) · 大小 · 种子/下载数 · 类别 · 站点 · 操作(下载/Blackhole/磁链)
-│       │       行内展开：海报、infohash、上下传比、最小比率/时间
+│       │     SearchResultTable（容器：工具栏=计数/死种过滤/标题二次过滤/视图切换 + 条件渲染）
+│       │       ├─ DataTable 视图（默认 50/页）：日期 · 标题(链到 Details) · 大小 · 种子/下载数 · 类别 · 站点 · 操作
+│       │       └─ SearchResultList 视图（v1.3 默认）：大缩略图(lazy) · 分类/标题/label · pill 徽标+操作
+│       │          Paginator(10/25/50) + 哨兵懒渲染；行内展开同表格：海报、infohash、上下传比、最小比率/时间
 │       ├── IndexersView        # 筛选栏 + Tabs[已配置/未配置] IndexerTable + IndexerConfigDialog + ConfirmDialog
 │       │     已配置行：状态徽标 · 名称+图标 · 类型 · 标签 · Caps · 操作（搜索/测试/配置/复制 Torznab URL/删除）
 │       │     未配置行：名称 · 描述 · 类型 · 语言 · 标签 · 多选批量添加
@@ -139,6 +148,8 @@ App.vue
 - 缓存 releases 视图仅在 `cache_enabled` 时可进入；表格列与上游 `updateSearchResultTable` 对齐。
 - 预设（presets）：`vestt.presets` localStorage 键，结构与上游 `savedPresets` 等价。
 - 索引器行"搜索"：跳首页并预选该 tracker（不写 hash，见 SPEC-13 澄清记录）。
+- v1.3 偏离上游：默认 list 卡片视图、`vestt.results.view` 视图持久化、标题本地二次过滤、
+  页内懒渲染均为上游没有的功能（上游只有 DataTable + 客户端分页）。
 
 ## 5. 动态配置表单（DynamicForm）
 

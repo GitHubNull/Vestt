@@ -171,6 +171,10 @@ export default {
   results: {
     showing: '共 {total} 条，显示 {shown} 条',
     deadTorrents: '显示死种',
+    viewList: '列表视图',
+    viewTable: '表格视图',
+    filterPlaceholder: '在结果中按标题过滤…',
+    filterClear: '清除过滤',
     noResults: '没有结果。',
     firstSeen: '首次收录',
     published: '发布时间',

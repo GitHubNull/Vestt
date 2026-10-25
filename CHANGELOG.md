@@ -12,6 +12,27 @@
 - `0.x` 阶段（`0.y.z`）：`MINOR` 表示功能面推进（SPEC 批次落地），`PATCH` 表示缺陷
   修复；进入 `1.0.0` 前不承诺 API 兼容性。
 
+## [0.2.0] - 2026-10-25
+
+搜索结果默认改为 DataView 风格卡片视图（用户决策，有意偏离上游单表格形态）。
+
+### Added
+
+- **卡片视图**：搜索结果默认以 list 卡片展示——大缩略图（无海报时为站点首字母 +
+  站点名散列配色的占位块，右下角磁链水印）、分类/站点小字 + 标题 + IMDB/TMDB 等彩色
+  label、大小与 S/L pill 徽标、下载/磁链/Blackhole 操作，行内展开详情与表格一致
+- **视图切换**：结果工具栏 list/table 切换按钮，选择持久化 localStorage
+  `vestt.results.view`（默认 list）；缓存 releases 视图保持纯表格，不出现切换
+- **页内懒渲染**：分页器（10/25/50 每页）之外，卡片列表用 IntersectionObserver 哨兵
+  按批追加渲染，大结果集不会撑爆 DOM
+- **本地二次过滤**：工具栏标题过滤框（带 × 清除），对已加载结果大小写不敏感子串
+  过滤，不发后端请求，列表/表格视图同时生效
+
+### Changed
+
+- `frontend.md` 升至 v1.3：组件树、状态表、工程结构回写；`releaseUtils.ts` 抽取
+  表格与卡片共享的 label/链接/rowKey/blackhole/过滤纯函数
+
 ## [0.1.0] - 2026-10-25
 
 首个可运行版本：Jackett 0.24.2900 的功能对等复刻（Go 后端 + Vue 3 前端 + SQLite 存储），
@@ -51,4 +72,5 @@ API 路径与报文与上游保持兼容。
 - 运行旗标：`--port`、`--data-dir`、`--basepathoverride`、`--loglevel`
   （flag 为当次运行覆盖，不写回数据库）。
 
+[0.2.0]: https://github.com/GitHubNull/Vestt/releases/tag/v0.2.0
 [0.1.0]: https://github.com/GitHubNull/Vestt/releases/tag/v0.1.0
