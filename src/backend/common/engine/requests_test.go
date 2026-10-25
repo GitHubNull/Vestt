@@ -226,7 +226,7 @@ func TestHandleRequestQueryseparator(t *testing.T) {
 	var gotQuery string
 	f := newLoginFixture(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotQuery = r.URL.RawQuery
-		fmt.Fprint(w, "ok")
+		_, _ = fmt.Fprint(w, "ok")
 	}))
 	def := &IndexerDefinition{
 		ID:     "dlsep",
@@ -282,9 +282,9 @@ func TestDownloadViaSelector(t *testing.T) {
 		switch r.URL.Path {
 		case "/tor/1":
 			w.Header().Set("Content-Type", "text/html")
-			fmt.Fprint(w, `<html><body><a id="dl" href="/file.torrent">x</a></body></html>`)
+			_, _ = fmt.Fprint(w, `<html><body><a id="dl" href="/file.torrent">x</a></body></html>`)
 		case "/file.torrent":
-			w.Write([]byte("d8:announce4:fake"))
+			_, _ = w.Write([]byte("d8:announce4:fake"))
 		default:
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -310,14 +310,14 @@ func TestDownloadTestlinktorrent(t *testing.T) {
 	f := newLoginFixture(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/page":
-			fmt.Fprint(w, `<html><body>
+			_, _ = fmt.Fprint(w, `<html><body>
 				<a id="bad" href="/bad">b</a>
 				<a id="good" href="/good">g</a>
 			</body></html>`)
 		case "/bad":
-			w.Write([]byte("x-not-a-torrent"))
+			_, _ = w.Write([]byte("x-not-a-torrent"))
 		case "/good":
-			w.Write([]byte("d4:fake"))
+			_, _ = w.Write([]byte("d4:fake"))
 		}
 	}))
 	def := &IndexerDefinition{
@@ -353,7 +353,7 @@ func TestDownloadTestlinktorrent(t *testing.T) {
 // TestDownloadInfohash verifies hash/title selectors produce a public magnet.
 func TestDownloadInfohash(t *testing.T) {
 	f := newLoginFixture(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `<html><body>
+		_, _ = fmt.Fprint(w, `<html><body>
 			<div id="hash">ABCDEF0123456789ABCDEF0123456789ABCDEF01</div>
 			<div id="title">Some Release 1080p</div>
 		</body></html>`)
@@ -385,11 +385,11 @@ func TestDownloadBeforePathselector(t *testing.T) {
 	f := newLoginFixture(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/details/1":
-			fmt.Fprint(w, `<html><body><form id="dlform" action="/take/9"></form></body></html>`)
+			_, _ = fmt.Fprint(w, `<html><body><form id="dlform" action="/take/9"></form></body></html>`)
 		case "/take/9":
-			fmt.Fprint(w, `<html><body><a id="real" href="/file.torrent">dl</a></body></html>`)
+			_, _ = fmt.Fprint(w, `<html><body><a id="real" href="/file.torrent">dl</a></body></html>`)
 		case "/file.torrent":
-			w.Write([]byte("d4:fake"))
+			_, _ = w.Write([]byte("d4:fake"))
 		default:
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -417,7 +417,7 @@ func TestDownloadBeforePathselector(t *testing.T) {
 // selector hits.
 func TestDownloadSelectorMismatch(t *testing.T) {
 	f := newLoginFixture(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `<html><body><p>nothing here</p></body></html>`)
+		_, _ = fmt.Fprint(w, `<html><body><p>nothing here</p></body></html>`)
 	}))
 	x := downloadDef(t, f.srv.URL, &DownloadBlock{
 		Selectors: []*SelectorField{{Selector: "#missing", Attribute: "href"}},

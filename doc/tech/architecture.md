@@ -77,6 +77,8 @@ Vestt/
 │   │   │   ├── models/              # TorznabQuery / ReleaseInfo / Caps / Categories
 │   │   │   │   └── config/          # ServerConfig / IndexerConfig 基类
 │   │   │   ├── indexer/             # Indexer 接口 / BaseIndexer / 注册表 / 元索引器
+│   │   │   │   ├── indexer/manual/  # 手写索引器（批次注册 registry_batchN.go）
+│   │   │   │   ├── indexer/shared/  # 共享抽象基类（Gazelle/Avistaz/Brazilian/CouchPotato）
 │   │   │   │   ├── meta/            # all / aggregate / fallbacks
 │   │   │   │   ├── manual/          # 62 个手写索引器（每文件一个，文件名=站点名）
 │   │   │   │   └── shared/          # 手写索引器共用辅助（Gazelle、分页等）
@@ -153,8 +155,11 @@ SQLite 打开/迁移 → Store 各 DAO
 ```
 
 （SPEC-05 落地状态：HTTPClient 栈、IndexerManagerService 与 Cardigann 动态工厂
-（`engine.LoadAll` → 每定义一个 `engine.NewCardigann` 实例）已在 main.go 装配；
-Registry 的 62 个手写索引器随 SPEC-08/09/10 接入。）
+（`engine.LoadAll` → 每定义一个 `engine.NewCardigann` 实例）已在 main.go 装配。
+SPEC-08 落地状态：批次 1 的 21 个手写索引器经 `indexer/manual/registry_batch1.go`
+init() 登记（main.go blank import 接线）；SPEC-09 批次 2（20 个，registry_batch2.go）
+与 SPEC-10 批次 3（21 个，registry_batch3.go）已追加，62 个手写索引器全部落地，
+`TestAllManualIndexersRegistered` 锁定注册计数（另含 582 个引擎定义与 2 个元索引器）。
 
 ### 4.2 Indexer 接口（上游 IIndexer 等价）
 

@@ -36,6 +36,8 @@ type options struct {
 	DataDir          string
 	BasePathOverride string
 	LogLevel         string
+	ListenPublic     bool
+	ListenPrivate    bool
 }
 
 func parseFlags() options {
@@ -44,6 +46,8 @@ func parseFlags() options {
 	flag.StringVar(&opts.DataDir, "data-dir", "", "data directory (default: platform user config dir)")
 	flag.StringVar(&opts.BasePathOverride, "basepathoverride", "", "url base path override (overrides config for this run only)")
 	flag.StringVar(&opts.LogLevel, "loglevel", "", "log level info|debug (overrides config for this run only)")
+	flag.BoolVar(&opts.ListenPublic, "listenpublic", false, "listen publicly (bind 0.0.0.0, overrides config for this run only)")
+	flag.BoolVar(&opts.ListenPrivate, "listenprivate", false, "only allow local access (overrides config for this run only)")
 	flag.Parse()
 	return opts
 }
@@ -80,7 +84,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "open store: %v\n", err)
 		os.Exit(1)
 	}
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	cfgService := services.NewConfigService(st, vesttVersion)
 	if err := cfgService.Load(context.Background()); err != nil {
@@ -118,8 +122,16 @@ func main() {
 	security := services.NewSecurityService(st)
 
 	cfg := cfgService.Config()
+	// Console listen overrides (upstream Initialisation.ProcessConsoleOverrides,
+	// Initialisation.cs:119-136): per-run only, never persisted; --listenpublic
+	// wins if both are given.
+	allowExternal := cfg.AllowExternal
+	if opts.ListenPublic || opts.ListenPrivate {
+		allowExternal = opts.ListenPublic
+		slog.Info(fmt.Sprintf("Overriding external access to %v", allowExternal))
+	}
 	bind := cfg.LocalBindAddress
-	if cfg.AllowExternal {
+	if allowExternal {
 		bind = "0.0.0.0"
 	}
 

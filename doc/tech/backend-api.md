@@ -64,6 +64,7 @@ Torznab 错误响应统一为（HTTP 状态恒为 200，仅上游 429 例外—�
   "omdbkey": "",
   "omdburl": "",
   "app_version": "0.1.0",
+  "latest_version": "v0.2.0",
   "can_run_netcore": true,
   "proxy_type": "-1",
   "proxy_url": "",
@@ -77,6 +78,10 @@ Torznab 错误响应统一为（HTTP 状态恒为 200，仅上游 429 例外—�
   提交 `********` 表示不修改）。
 - `proxy_type`：`-1`=disabled，`0`=http，`1`=socks4，`2`=socks5（上游 ProxyType 枚举值语义）。
 - `can_run_netcore`：为兼容上游 DTO 保留，恒为 `true`。
+- `latest_version`（可选，SPEC-14）：最近一次**成功**版本检查记录的 GitHub latest release
+  tag（原样保留 `v` 前缀，如 `"v0.2.0"`）；从未检查过（或检查从未成功过）时该字段
+  **省略**（`omitempty`）。由 `POST /server/update` 写入 `saved_state`（§1.5），服务重启后仍保留；
+  仅本端点读取，POST /server/config 提交不涉及该字段。
 
 ### 1.2 `POST /api/v2.0/server/config`
 
@@ -116,7 +121,27 @@ Torznab 错误响应统一为（HTTP 状态恒为 200，仅上游 429 例外—�
 
 ### 1.5 `POST /api/v2.0/server/update`
 
-触发版本检查（对等上游 UpdateService；Vestt 仅检查并记录日志，不自动替换二进制）。响应 204。
+触发版本检查（对等上游 `UpdateService` 的"检查 latest 并提示"部分；Vestt 仅检查并记录日志，
+不下载/替换二进制）。请求体为空。检查**同步**执行，完成后返回。
+
+行为（实现见 `server/api/update.go`）：
+
+1. `GET https://api.github.com/repos/GitHubNull/Vestt/releases/latest`
+   （超时 10s；请求头 `User-Agent: vestt/<app_version>` —— GitHub API 要求 UA，
+   `Accept: application/vnd.github+json`），解析响应 JSON 的 `tag_name`。
+2. 成功：写 `saved_state.update.last_check`（RFC3339 UTC 时间戳）与
+   `saved_state.update.latest_version`（tag 原样，含 `v` 前缀），随后 `GET /server/config`
+   即携带 `latest_version`（§1.1）。
+3. 版本比较遵循 semver 优先级规则（prerelease：`0.1.0-dev` < `0.1.0`；
+   build 元数据忽略；`v` 前缀可省）：latest > 当前 → info 日志 "New release found..."；
+   latest < 当前 → warn 日志（downgrade，对等上游 `UpdateService.cs` L147）；
+   相等 → info 日志（已是最新）。
+4. 网络失败 / 非 200 / 响应不可解析 / `tag_name` 为空：仅 warn 日志（静默失败），
+   **不向调用方报错**，不改写 `saved_state`。
+
+响应：**恒为 `204 No Content`**（含网络失败路径——调用方无法从状态码区分检查成败，
+结果一律经 `GET /server/config` 的 `latest_version` 获知）。本端点不受 `updatedisabled`
+配置影响（对等上游手动检查按钮 `CheckForUpdatesNow` 绕过开关的语义）。
 
 ### 1.6 `POST /api/v2.0/server/shutdown`
 

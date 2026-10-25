@@ -97,13 +97,10 @@ func LoadAll(logger *slog.Logger, overlayDir string) (map[string]*IndexerDefinit
 		}
 	}
 
-	// secondary validation across the whole set (upstream load checks)
-	ids := map[string]bool{}
+	// secondary validation across the whole set (upstream load checks). The
+	// upstream duplicate-id guard is unreachable here: map keys are unique by
+	// construction, so no per-id membership test is needed.
 	for id, def := range defs {
-		if ids[id] {
-			// unreachable: map keys are unique by construction; kept for clarity
-		}
-		ids[id] = true
 		if err := validateDefinition(def); err != nil {
 			logger.Error(fmt.Sprintf("definition %s: %v", id, err))
 			stats.Skipped = append(stats.Skipped, fmt.Sprintf("%s: %v", id, err))

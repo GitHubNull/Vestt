@@ -176,7 +176,7 @@ func newTestManager(t *testing.T) (*IndexerManagerService, *store.Store) {
 func TestIndexerManagerLifecycle(t *testing.T) {
 	// httptest fake site standing in for a tracker
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("fake tracker page"))
+		_, _ = w.Write([]byte("fake tracker page"))
 	}))
 	defer srv.Close()
 	registerFakeIndexers(srv.URL)

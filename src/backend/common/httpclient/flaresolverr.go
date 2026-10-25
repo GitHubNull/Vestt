@@ -75,7 +75,7 @@ func (c *Client) solveChallenge(ctx context.Context, indexerID string, st *index
 	if err != nil {
 		return false, fmt.Errorf("FlareSolverr request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBodyBytes))
 	if err != nil {
 		return false, err

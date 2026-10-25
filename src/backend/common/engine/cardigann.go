@@ -183,14 +183,14 @@ func (x *Cardigann) settingItem(setting *SettingsField) (configdata.Item, error)
 		return it, nil
 	case "multi-select":
 		if setting.Options == nil {
-			return nil, errors.New("Options must be given for the 'multi-select' type")
+			return nil, errors.New("Options must be given for the 'multi-select' type") //nolint:staticcheck // 上游文案 CardigannIndexer.cs:163
 		}
 		it := configdata.NewMultiSelectItem(itemName, toOptions(setting.Options))
 		it.Values = append([]string(nil), setting.Defaults...)
 		return it, nil
 	case "select":
 		if setting.Options == nil {
-			return nil, errors.New("Options must be given for the 'select' type")
+			return nil, errors.New("Options must be given for the 'select' type") //nolint:staticcheck // 上游文案 CardigannIndexer.cs:171
 		}
 		it := configdata.NewSelectItem(itemName, toOptions(setting.Options))
 		it.Value = setting.Default
@@ -208,7 +208,7 @@ func (x *Cardigann) settingItem(setting *SettingsField) (configdata.Item, error)
 	case "info_useragent":
 		return configdata.NewInfoItem("How to get the User-Agent", userAgentInfo), nil
 	default:
-		return nil, fmt.Errorf("Invalid setting type '%s' specified", setting.Type)
+		return nil, fmt.Errorf("Invalid setting type '%s' specified", setting.Type) //nolint:staticcheck // 上游文案 CardigannIndexer.cs:192
 	}
 }
 
@@ -240,7 +240,7 @@ func (x *Cardigann) GetBaseTemplateVariables() TemplateVars {
 		".False":           nil,
 		".Today.Year":      strconv.Itoa(year),
 	}
-	cd := x.Base.ConfigData()
+	cd := x.ConfigData()
 	for _, setting := range x.Definition.Settings {
 		if cd == nil {
 			break
@@ -426,7 +426,7 @@ func (x *Cardigann) getConfigurationForSetup(ctx context.Context, automaticLogin
 				x.log().Debug(fmt.Sprintf("CardigannIndexer (%s): No captcha image found", x.ID()))
 			}
 		default:
-			return false, fmt.Errorf("Captcha type %q is not implemented", captcha.Type)
+			return false, fmt.Errorf("Captcha type %q is not implemented", captcha.Type) //nolint:staticcheck // 上游文案 CardigannIndexer.cs:1087
 		}
 	}
 
@@ -440,7 +440,7 @@ func (x *Cardigann) getConfigurationForSetup(ctx context.Context, automaticLogin
 }
 
 func (x *Cardigann) setLastError(msg string) {
-	if cd := x.Base.ConfigData(); cd != nil && cd.LastError != nil {
+	if cd := x.ConfigData(); cd != nil && cd.LastError != nil {
 		cd.LastError.Value = msg
 	}
 }
@@ -523,7 +523,7 @@ func (x *Cardigann) checkForError(res *httpclient.Result, errorBlocks []ErrorBlo
 			}
 			errorMessage = msg
 		}
-		return fmt.Errorf("Error: %s", strings.TrimSpace(errorMessage))
+		return fmt.Errorf("Error: %s", strings.TrimSpace(errorMessage)) //nolint:staticcheck // 上游文案 CardigannIndexer.cs:558
 	}
 	return nil
 }
@@ -591,12 +591,12 @@ func (x *Cardigann) doLogin(ctx context.Context, cookies string) (bool, error) {
 
 		form := x.landingDoc.Find(formSelector).First()
 		if form.Length() == 0 {
-			return false, fmt.Errorf("Login failed: No form found on %s using form selector %s", loginURL, formSelector)
+			return false, fmt.Errorf("Login failed: No form found on %s using form selector %s", loginURL, formSelector) //nolint:staticcheck // 上游文案 CardigannIndexer.cs:620
 		}
 
 		inputs := form.Find("input")
 		if inputs.Length() == 0 {
-			return false, fmt.Errorf("Login failed: No inputs found on %s using form selector %s", loginURL, formSelector)
+			return false, fmt.Errorf("Login failed: No inputs found on %s using form selector %s", loginURL, formSelector) //nolint:staticcheck // 上游文案 CardigannIndexer.cs:626
 		}
 
 		submitURLstr, _ := form.Attr("action")
@@ -628,7 +628,7 @@ func (x *Cardigann) doLogin(ctx context.Context, cookies string) (bool, error) {
 				if login.Selectors {
 					inputElement := x.landingDoc.Find(input.Key).First()
 					if inputElement.Length() == 0 {
-						return false, fmt.Errorf("Login failed: No input found using selector %s", input.Key)
+						return false, fmt.Errorf("Login failed: No input found using selector %s", input.Key) //nolint:staticcheck // 上游文案 CardigannIndexer.cs:667
 					}
 					inputName, _ = inputElement.Attr("name")
 				}
@@ -644,7 +644,7 @@ func (x *Cardigann) doLogin(ctx context.Context, cookies string) (bool, error) {
 			for _, kv := range login.SelectorInputs {
 				value, err := x.handleSelector(kv.Value, x.landingDoc.Selection, vars, !kv.Value.Optional)
 				if err != nil {
-					return false, fmt.Errorf("Error while parsing selector input=%s, selector=%s: %v", kv.Key, kv.Value.Selector, err)
+					return false, fmt.Errorf("Error while parsing selector input=%s, selector=%s: %v", kv.Key, kv.Value.Selector, err) //nolint:staticcheck // 上游文案 CardigannIndexer.cs:695
 				}
 				if kv.Value.Optional && value == "" {
 					continue
@@ -661,7 +661,7 @@ func (x *Cardigann) doLogin(ctx context.Context, cookies string) (bool, error) {
 			for _, kv := range login.GetSelectorInputs {
 				value, err := x.handleSelector(kv.Value, x.landingDoc.Selection, vars, !kv.Value.Optional)
 				if err != nil {
-					return false, fmt.Errorf("Error while parsing get selector input=%s, selector=%s: %v", kv.Key, kv.Value.Selector, err)
+					return false, fmt.Errorf("Error while parsing get selector input=%s, selector=%s: %v", kv.Key, kv.Value.Selector, err) //nolint:staticcheck // 上游文案 CardigannIndexer.cs:718
 				}
 				if kv.Value.Optional && value == "" {
 					continue
@@ -710,7 +710,7 @@ func (x *Cardigann) doLogin(ctx context.Context, cookies string) (bool, error) {
 					if login.Selectors {
 						inputElement := x.landingDoc.Find(captcha.Input).First()
 						if inputElement.Length() == 0 {
-							return false, fmt.Errorf("Login failed: No captcha input found using %s", captcha.Input)
+							return false, fmt.Errorf("Login failed: No captcha input found using %s", captcha.Input) //nolint:staticcheck // 上游文案 CardigannIndexer.cs:751
 						}
 						input, _ = inputElement.Attr("name")
 					}
@@ -725,7 +725,7 @@ func (x *Cardigann) doLogin(ctx context.Context, cookies string) (bool, error) {
 					if login.Selectors {
 						inputElement := x.landingDoc.Find(captcha.Input).First()
 						if inputElement.Length() == 0 {
-							return false, fmt.Errorf("Login failed: No captcha input found using %s", captcha.Input)
+							return false, fmt.Errorf("Login failed: No captcha input found using %s", captcha.Input) //nolint:staticcheck // 上游文案 CardigannIndexer.cs:767
 						}
 						input, _ = inputElement.Attr("name")
 					}
@@ -817,7 +817,7 @@ func (x *Cardigann) doLogin(ctx context.Context, cookies string) (bool, error) {
 		}
 
 	default:
-		return false, fmt.Errorf("Login method %s not implemented", login.Method)
+		return false, fmt.Errorf("Login method %s not implemented", login.Method) //nolint:staticcheck // 上游文案 CardigannIndexer.cs:846
 	}
 
 	x.log().Debug(fmt.Sprintf("CardigannIndexer (%s): Cookies after login: %s", x.ID(), x.CookieHeader()))
@@ -872,7 +872,7 @@ func (x *Cardigann) testLogin(ctx context.Context) (bool, error) {
 		if hint := x.redirectDomainHint(loginTestURL, location); hint != "" {
 			errMsg += " Try changing the indexer URL to " + hint + "."
 			if x.Definition.Followredirect {
-				if cd := x.Base.ConfigData(); cd != nil && cd.SiteLink != nil {
+				if cd := x.ConfigData(); cd != nil && cd.SiteLink != nil {
 					cd.SiteLink.Value = hint
 					x.SiteLinkValue = hint
 					x.SaveConfig(ctx)
@@ -889,7 +889,7 @@ func (x *Cardigann) testLogin(ctx context.Context) (bool, error) {
 			return true, err
 		}
 		if querySelectorAll(doc.Selection, login.Test.Selector).Length() == 0 {
-			return true, fmt.Errorf("Login failed: Selector %q didn't match", login.Test.Selector)
+			return true, fmt.Errorf("Login failed: Selector %q didn't match", login.Test.Selector) //nolint:staticcheck // 上游文案 CardigannIndexer.cs:944
 		}
 	}
 	return true, nil
@@ -916,7 +916,7 @@ func (x *Cardigann) redirectDomainHint(requestURL, redirectURL string) string {
 // ResultsForQuery implements indexer.Indexer. Response parsing lands in
 // SPEC-06; until then the request generation pipeline returns an empty set.
 func (x *Cardigann) ResultsForQuery(ctx context.Context, q *models.TorznabQuery, isMeta bool) (*indexer.IndexerResult, error) {
-	return x.Base.ResultsForQueryWith(ctx, q, isMeta, func(ctx context.Context, q *models.TorznabQuery) ([]*models.ReleaseInfo, error) {
+	return x.ResultsForQueryWith(ctx, q, isMeta, func(ctx context.Context, q *models.TorznabQuery) ([]*models.ReleaseInfo, error) {
 		return x.performQuery(ctx, q)
 	})
 }

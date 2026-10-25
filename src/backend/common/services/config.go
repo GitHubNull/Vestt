@@ -179,6 +179,20 @@ func (c *ConfigService) LoggingDebug() bool {
 	return c.loggingDebug
 }
 
+// AppVersion returns the injected build version (backend-api.md §1.1 app_version).
+func (c *ConfigService) AppVersion() string { return c.appVersion }
+
+// State returns the raw saved_state value for key (data-model.md §2.7);
+// ok=false when the key was never written.
+func (c *ConfigService) State(ctx context.Context, key string) (value string, ok bool, err error) {
+	return c.store.GetSavedState(ctx, key)
+}
+
+// SaveState upserts a saved_state value; valueJSON must be a JSON value.
+func (c *ConfigService) SaveState(ctx context.Context, key, valueJSON string) error {
+	return c.store.SaveSavedState(ctx, key, valueJSON)
+}
+
 // DTO maps the current config to the API shape. passwordMasked controls the
 // password field value.
 func (c *ConfigService) DTO() *ConfigDTO {

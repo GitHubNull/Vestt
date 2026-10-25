@@ -24,7 +24,8 @@ import (
 type Value = any
 
 // Parse parses one bencode document, rejecting trailing garbage.
-func Parse(data []byte) (Value, error) {	v, rest, err := parseValue(data)
+func Parse(data []byte) (Value, error) {
+	v, rest, err := parseValue(data)
 	if err != nil {
 		return nil, err
 	}

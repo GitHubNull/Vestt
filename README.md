@@ -40,7 +40,8 @@ make build        # 构建前端 + 产出 dist/vestt 单二进制
 # 打开 http://127.0.0.1:9117/UI/Dashboard
 ```
 
-常用参数：`--port`、`--data-dir`、`--basepathoverride`、`--loglevel`（info|debug）。
+常用参数：`--port`、`--data-dir`、`--basepathoverride`、`--loglevel`（info|debug）、
+`--listenpublic`（绑定 0.0.0.0）/ `--listenprivate`（仅环回，对等上游 -x/-z，当次运行覆盖）。
 
 参数优先级：`--port` / `--basepathoverride` / `--loglevel` 为**当次运行覆盖** ——
 优先级 `flag > 数据库配置 > 默认值`，flag 的变更**不会写回**数据库，重启后仍按数据库配置生效；
@@ -85,9 +86,23 @@ server {
 
 ```bash
 make run          # 构建并启动
-make test         # Go 测试 + vet
+make test         # 质量门禁：Go 测试 + vet + golangci-lint + 覆盖率阈值
+                  # + 前端 typecheck / eslint / vitest
+make smoke        # L3 冒烟：构建产物启动 → health → caps → 假站点搜索 → 下载代理
+make release      # 6 平台二进制 + SHA256SUMS + vestt-web 静态包（dist/release/）
 pnpm --dir src/frontend dev   # 前端 HMR（API 代理到 9117）
 ```
+
+### 从 Jackett 迁移
+
+```bash
+go run ./src/backend/cmd/vestt-import --src ~/.config/Jackett --out ~/.config/vestt
+```
+
+读取 Jackett 数据目录（`ServerConfig.json` + `Indexers/`），映射服务器配置与逐索引器
+配置（含 `CookieHeader` 隐藏项）到 Vestt 数据库，打印导入/跳过清单；可重复执行（幂等 upsert）。
+`--out` 指向的目录不存在时自动创建；迁移完成后不带 `--data-dir` 直接启动即使用该目录
+（Vestt 默认数据目录：平台用户配置目录下的 `vestt/`）。
 
 ### 项目结构
 

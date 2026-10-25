@@ -477,7 +477,7 @@ func (x *Cardigann) matchSelector(res *httpclient.Result, sel *SelectorField, va
 	if sel.Attribute != "" {
 		attr, ok := element.Attr(sel.Attribute)
 		if !ok {
-			return "", fmt.Errorf("Attribute %q is not set for element %s", sel.Attribute, goqueryOuterHTML(element))
+			return "", fmt.Errorf("Attribute %q is not set for element %s", sel.Attribute, goqueryOuterHTML(element)) //nolint:staticcheck // 上游文案 CardigannIndexer.cs:2074
 		}
 		val = attr
 	} else {
@@ -513,7 +513,7 @@ func (x *Cardigann) Download(ctx context.Context, link *url.URL) ([]byte, error)
 				if err != nil {
 					return nil, err
 				}
-				before.RequestBlock.Path = path
+				before.Path = path
 			}
 			response, err = x.handleRequestAsync(ctx, &before.RequestBlock, variables, link.String(), headers)
 			if err != nil {
@@ -526,18 +526,18 @@ func (x *Cardigann) Download(ctx context.Context, link *url.URL) ([]byte, error)
 		}
 
 		if dl.Infohash != nil {
-			data, done := x.downloadViaInfohash(ctx, link, method, headers, variables, dl, response)
+			data, done := x.downloadViaInfohash(ctx, link, method, variables, dl, response)
 			if done {
 				return data, nil
 			}
 			// upstream: exception logged, falls through to the plain
 			// base download with the original link
 		} else if len(dl.Selectors) > 0 {
-			return x.downloadViaSelectors(ctx, link, method, headers, variables, dl, response)
+			return x.downloadViaSelectors(ctx, link, method, variables, dl, response)
 		}
 	}
 	headers = x.parseCustomHeaders(firstNonNil(dlHeaders(dl), x.Definition.Search.Headers), x.GetBaseTemplateVariables())
-	return x.Base.DownloadWith(ctx, link, method, link.String(), headers)
+	return x.DownloadWith(ctx, link, method, link.String(), headers)
 }
 
 func dlHeaders(dl *DownloadBlock) StringListMap {
@@ -548,15 +548,17 @@ func dlHeaders(dl *DownloadBlock) StringListMap {
 }
 
 // downloadViaInfohash mirrors the Infohash try/catch block; done is true only
-// when the upstream code path returned (base download succeeded).
-func (x *Cardigann) downloadViaInfohash(ctx context.Context, link *url.URL, method string, headers map[string]string, variables TemplateVars, dl *DownloadBlock, response *httpclient.Result) (data []byte, done bool) {
+// when the upstream code path returned (base download succeeded). Headers are
+// (re-)parsed inside the block from the same expression upstream uses, so no
+// headers parameter is carried in.
+func (x *Cardigann) downloadViaInfohash(ctx context.Context, link *url.URL, method string, variables TemplateVars, dl *DownloadBlock, response *httpclient.Result) (data []byte, done bool) {
 	fail := func(err error) ([]byte, bool) {
 		x.log().Error(fmt.Sprintf("CardigannIndexer (%s): An exception occurred while trying Infohash block with hashSelector %s and titleSelector %s: %v",
 			x.ID(), dl.Infohash.Hash.Selector, dl.Infohash.Title.Selector, err))
 		return nil, false
 	}
 
-	headers = x.parseCustomHeaders(firstNonNil(dl.Headers, x.Definition.Search.Headers), variables)
+	headers := x.parseCustomHeaders(firstNonNil(dl.Headers, x.Definition.Search.Headers), variables)
 
 	var err error
 	if !dl.Infohash.Usebeforeresponse || dl.Before == nil || response == nil {
@@ -570,14 +572,14 @@ func (x *Cardigann) downloadViaInfohash(ctx context.Context, link *url.URL, meth
 		return fail(err)
 	}
 	if hash == "" {
-		return fail(errors.New("InfoHash selectors didn't match hash."))
+		return fail(errors.New("InfoHash selectors didn't match hash.")) //nolint:staticcheck // 上游文案 CardigannIndexer.cs:2123
 	}
 	title, err := x.matchSelector(response, dl.Infohash.Title, variables)
 	if err != nil {
 		return fail(err)
 	}
 	if title == "" {
-		return fail(errors.New("InfoHash selectors didn't match title."))
+		return fail(errors.New("InfoHash selectors didn't match title.")) //nolint:staticcheck // 上游文案 CardigannIndexer.cs:2127
 	}
 	magnet := infoHashToPublicMagnet(hash, title)
 	if magnet == "" {
@@ -588,7 +590,7 @@ func (x *Cardigann) downloadViaInfohash(ctx context.Context, link *url.URL, meth
 		return fail(err)
 	}
 	// upstream passes no headers here (preserved)
-	data, err = x.Base.DownloadWith(ctx, mustParse(torrentLink), method, torrentLink, nil)
+	data, err = x.DownloadWith(ctx, mustParse(torrentLink), method, torrentLink, nil)
 	if err != nil {
 		return fail(err)
 	}
@@ -596,9 +598,11 @@ func (x *Cardigann) downloadViaInfohash(ctx context.Context, link *url.URL, meth
 }
 
 // downloadViaSelectors mirrors the Download.Selectors loop with per-selector
-// try/catch (a failing base download moves on to the next selector).
-func (x *Cardigann) downloadViaSelectors(ctx context.Context, link *url.URL, method string, headers map[string]string, variables TemplateVars, dl *DownloadBlock, response *httpclient.Result) ([]byte, error) {
-	headers = x.parseCustomHeaders(firstNonNil(dl.Headers, x.Definition.Search.Headers), variables)
+// try/catch (a failing base download moves on to the next selector). Headers
+// are (re-)parsed inside the loop from the same expression upstream uses, so
+// no headers parameter is carried in.
+func (x *Cardigann) downloadViaSelectors(ctx context.Context, link *url.URL, method string, variables TemplateVars, dl *DownloadBlock, response *httpclient.Result) ([]byte, error) {
+	headers := x.parseCustomHeaders(firstNonNil(dl.Headers, x.Definition.Search.Headers), variables)
 
 	var lastResponse *httpclient.Result
 	for _, selector := range dl.Selectors {
@@ -640,7 +644,7 @@ func (x *Cardigann) downloadViaSelectors(ctx context.Context, link *url.URL, met
 				continue
 			}
 		}
-		data, err := x.Base.DownloadWith(ctx, mustParse(torrentLink), method, torrentLink, headers)
+		data, err := x.DownloadWith(ctx, mustParse(torrentLink), method, torrentLink, headers)
 		if err != nil {
 			fail(err)
 			continue

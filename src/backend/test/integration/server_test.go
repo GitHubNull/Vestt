@@ -37,7 +37,7 @@ func newTestEnv(t *testing.T) *testEnv {
 	if err != nil {
 		t.Fatalf("open store: %v", err)
 	}
-	t.Cleanup(func() { st.Close() })
+	t.Cleanup(func() { _ = st.Close() })
 
 	cfgService := services.NewConfigService(st, "0.1.0-test")
 	if err := cfgService.Load(t.Context()); err != nil {
@@ -91,7 +91,7 @@ func (e *testEnv) configureIndexer(t *testing.T, id string, items ...map[string]
 	}
 	raw, _ := json.Marshal(items)
 	resp := e.post(t, "/api/v2.0/indexers/"+id+"/Config", "application/json", raw)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusNoContent {
 		body, _ := io.ReadAll(resp.Body)
 		t.Fatalf("configure %s: status %d: %s", id, resp.StatusCode, body)
@@ -120,7 +120,7 @@ func (e *testEnv) post(t *testing.T, path, contentType string, body []byte) *htt
 func TestGetConfigKeySet(t *testing.T) {
 	e := newTestEnv(t)
 	resp := e.get(t, "/api/v2.0/server/config")
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("status: %d", resp.StatusCode)
 	}
@@ -161,7 +161,7 @@ func TestGetConfigKeySet(t *testing.T) {
 func TestUpdateConfigRestartRequired(t *testing.T) {
 	e := newTestEnv(t)
 	resp := e.post(t, "/api/v2.0/server/config", "application/json", []byte(`{"port": 9118}`))
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("status: %d", resp.StatusCode)
 	}
@@ -181,7 +181,7 @@ func TestUpdateConfigRestartRequired(t *testing.T) {
 func TestUpdateConfigValidationError(t *testing.T) {
 	e := newTestEnv(t)
 	resp := e.post(t, "/api/v2.0/server/config", "application/json", []byte(`{"port": 22}`))
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Fatalf("status: %d", resp.StatusCode)
 	}
@@ -198,14 +198,14 @@ func TestAdminPasswordFlow(t *testing.T) {
 
 	// set admin password
 	resp := e.post(t, "/api/v2.0/server/adminpassword", "application/json", []byte(`"s3cret"`))
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusNoContent {
 		t.Fatalf("set password status: %d", resp.StatusCode)
 	}
 
 	// admin API now requires a session
 	resp2 := e.get(t, "/api/v2.0/server/config")
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 	if resp2.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("expected 401, got %d", resp2.StatusCode)
 	}
@@ -219,7 +219,7 @@ func TestAdminPasswordFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("login post: %v", err)
 	}
-	defer loginResp.Body.Close()
+	defer func() { _ = loginResp.Body.Close() }()
 	if loginResp.StatusCode != http.StatusFound {
 		t.Fatalf("login status: %d", loginResp.StatusCode)
 	}
@@ -234,7 +234,7 @@ func TestAdminPasswordFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("login post: %v", err)
 	}
-	defer loginResp2.Body.Close()
+	defer func() { _ = loginResp2.Body.Close() }()
 	var cookie *http.Cookie
 	for _, c := range loginResp2.Cookies() {
 		if c.Name == "vestt_session" {
@@ -255,7 +255,7 @@ func TestAdminPasswordFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("authed get: %v", err)
 	}
-	defer authResp.Body.Close()
+	defer func() { _ = authResp.Body.Close() }()
 	if authResp.StatusCode != http.StatusOK {
 		t.Fatalf("expected 200 with session, got %d", authResp.StatusCode)
 	}
@@ -267,14 +267,14 @@ func TestShutdownApiKey(t *testing.T) {
 	apiKey := e.config.Config().APIKey
 
 	resp := e.post(t, "/api/v2.0/server/shutdown?apikey=wrong", "application/json", nil)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("wrong apikey: expected 401, got %d", resp.StatusCode)
 	}
 
 	// passkey alias must also work
 	resp2 := e.post(t, "/api/v2.0/server/shutdown?passkey="+apiKey, "application/json", nil)
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 	if resp2.StatusCode != http.StatusOK {
 		t.Fatalf("correct passkey: expected 200, got %d", resp2.StatusCode)
 	}
@@ -292,7 +292,7 @@ func TestHealthAndUIRedirects(t *testing.T) {
 	e := newTestEnv(t)
 
 	resp := e.get(t, "/health")
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("health status: %d", resp.StatusCode)
 	}
@@ -312,7 +312,7 @@ func TestHealthAndUIRedirects(t *testing.T) {
 	if err != nil {
 		t.Fatalf("root: %v", err)
 	}
-	defer rootResp.Body.Close()
+	defer func() { _ = rootResp.Body.Close() }()
 	if loc := rootResp.Header.Get("Location"); loc != "/UI/Dashboard" {
 		t.Fatalf("root redirect: %q", loc)
 	}
@@ -322,7 +322,7 @@ func TestHealthAndUIRedirects(t *testing.T) {
 	if err != nil {
 		t.Fatalf("testcookie: %v", err)
 	}
-	defer tcResp.Body.Close()
+	defer func() { _ = tcResp.Body.Close() }()
 	if tcResp.StatusCode != http.StatusBadRequest {
 		t.Fatalf("testcookie status: %d", tcResp.StatusCode)
 	}
@@ -332,7 +332,7 @@ func TestHealthAndUIRedirects(t *testing.T) {
 	if err != nil {
 		t.Fatalf("login: %v", err)
 	}
-	defer loginResp.Body.Close()
+	defer func() { _ = loginResp.Body.Close() }()
 	if loc := loginResp.Header.Get("Location"); loc != "TestCookie" {
 		t.Fatalf("login redirect: %q", loc)
 	}
@@ -342,7 +342,7 @@ func TestHealthAndUIRedirects(t *testing.T) {
 func TestLogsEndpoint(t *testing.T) {
 	e := newTestEnv(t)
 	resp := e.get(t, "/api/v2.0/server/logs")
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("logs status: %d", resp.StatusCode)
 	}

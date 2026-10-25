@@ -57,13 +57,13 @@ func NewSite(t *testing.T) *Site {
 		}
 		switch r.URL.Path {
 		case "/page":
-			w.Write([]byte("fake tracker page"))
+			_, _ = w.Write([]byte("fake tracker page"))
 		case "/api/search":
 			s.mu.Lock()
 			s.searches++
 			s.mu.Unlock()
 			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprintf(w, `{"data":[{"type":"torrent","id":"1","attributes":{
+			_, _ = fmt.Fprintf(w, `{"data":[{"type":"torrent","id":"1","attributes":{
 				"category_id":1,"name":"Cardigann Release",
 				"details_link":%q,"download_link":%q,
 				"seeders":7,"leechers":3,"size":2097152,
@@ -72,21 +72,21 @@ func NewSite(t *testing.T) *Site {
 		case "/torrent":
 			// intentionally UNSORTED bencode dictionary keys
 			// unsorted keys on purpose: the /dl proxy must re-encode canonically
-			w.Write([]byte("d4:spam4:eggs7:privatei1e1:ai2ee"))
+			_, _ = w.Write([]byte("d4:spam4:eggs7:privatei1e1:ai2ee"))
 		case "/img":
 			w.Header().Set("Content-Type", "image/png")
-			w.Write([]byte("PNG-BYTES"))
+			_, _ = w.Write([]byte("PNG-BYTES"))
 		case "/notfound":
 			http.NotFound(w, r)
 		case "/ratelimited":
 			w.Header().Set("Retry-After", "42")
 			w.WriteHeader(http.StatusTooManyRequests)
-			w.Write([]byte("slow down"))
+			_, _ = w.Write([]byte("slow down"))
 		default:
 			http.NotFound(w, r)
 		}
 	}))
-	t.Cleanup(s.Server.Close)
+	t.Cleanup(s.Close)
 	return s
 }
 

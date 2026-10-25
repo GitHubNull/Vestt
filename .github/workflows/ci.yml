@@ -1,0 +1,150 @@
+# SPEC-14 §3.1 CI：lint → test（含 SQLite 临时目录）→ build（6 平台产物）→ smoke。
+# 上游参考：tmp/ref/Jackett-0.24.2900/azure-pipelines.yml（CodeStyle / UnitTest / Build
+# 分 stage 串联的思路，此处收敛为单 workflow 的 job 依赖链）。
+# Go 版本读 src/backend/go.mod；pnpm 版本 pin v10（package.json 无 packageManager 字段）。
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint (gofmt + golangci-lint)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: src/backend/go.mod
+          cache-dependency-path: src/backend/go.sum
+
+      - name: gofmt check（gofmt -l 输出非空即失败）
+        run: |
+          unformatted="$(gofmt -l src/backend)"
+          if [ -n "$unformatted" ]; then
+            echo "::error::gofmt violations (run 'gofmt -w src/backend'):"
+            echo "$unformatted"
+            exit 1
+          fi
+          echo "gofmt: all Go files formatted"
+
+      - name: golangci-lint（SPEC §3.1：errcheck/staticcheck/govet，配置 src/backend/.golangci.yml）
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.15.0
+          working-directory: src/backend
+
+  test:
+    name: Test (make test quality gate)
+    needs: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      # package.json 无 packageManager 字段 → 显式 pin pnpm v10（lockfileVersion 9.0 兼容）
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: src/frontend/pnpm-lock.yaml
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: src/backend/go.mod
+          cache-dependency-path: src/backend/go.sum
+
+      # make test 中的 golangci-lint 环节需要二进制在 PATH（GOLANGCI 检测 command -v）
+      - name: Install golangci-lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh \
+            | sh -s -- -b "$(go env GOPATH)/bin" v2.15.0
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      # modernc.org/sqlite 纯 Go 实现（无 CGO），ubuntu runner 直接可用，无需服务容器；
+      # 测试内 SQLite 使用系统临时目录（SPEC "test 含 SQLite 临时目录"），runner 默认 /tmp 即满足。
+      # make test = 后端单测(覆盖率) + go vet + golangci-lint + 覆盖率阈值 + 前端 typecheck/eslint/vitest
+      - name: make test
+        run: |
+          pnpm --dir src/frontend install --frozen-lockfile
+          make test
+
+  build:
+    name: Release build (6 platforms + SHA256SUMS + web)
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: src/frontend/pnpm-lock.yaml
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: src/backend/go.mod
+          cache-dependency-path: src/backend/go.sum
+
+      # make release 前置 web 目标（自身含 pnpm install --frozen-lockfile + vite build + rsync embed），
+      # 产出 6 平台二进制 + SHA256SUMS + vestt-web tar.gz 到 dist/release/
+      - name: make release VERSION=ci-smoke
+        run: make release VERSION=ci-smoke
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: vestt-release-ci-smoke
+          path: dist/release/
+          if-no-files-found: error
+
+  smoke:
+    name: Smoke (L3)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # 注意：test/smoke 目前仅有 doc.go 占位，本 job 待 test/smoke 冒烟测试落地后真正生效。
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: src/frontend/pnpm-lock.yaml
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: src/backend/go.mod
+          cache-dependency-path: src/backend/go.sum
+
+      - name: make web && make smoke
+        run: |
+          make web
+          make smoke

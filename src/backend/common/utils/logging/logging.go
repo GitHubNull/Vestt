@@ -163,7 +163,7 @@ func (f *rollingFile) Write(p []byte) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer fd.Close()
+	defer func() { _ = fd.Close() }()
 	n, err := fd.Write(p)
 	f.size += int64(n)
 	return n, err

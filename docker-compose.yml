@@ -1,0 +1,58 @@
+# Vestt — Jackett 0.24.2900 功能对等复刻（Go + Vue 3，单二进制内嵌前端）。
+#
+# 用法：
+#   docker compose up -d          # 首次会以本目录 Dockerfile 构建镜像 vestt:local
+#   docker compose logs -f vestt
+#
+# 数据（vestt.db、日志）持久化在命名卷 vestt-data 中，挂载到容器内 /data。
+# 限制网络环境构建可加代理（不写入镜像）：
+#   docker compose build --build-arg HTTPS_PROXY=http://127.0.0.1:7890
+#
+# 注意：Vestt 默认按配置绑定 127.0.0.1（对等上游 external=false 的安全默认值）。
+# 镜像 CMD 已带 --listenpublic（当次运行覆盖旗标，不写回数据库），容器内绑定 0.0.0.0，
+# ports 端口映射开箱即用；若想恢复仅环回监听，可覆盖 command 去掉该旗标。
+
+services:
+  vestt:
+    build:
+      context: .
+      args:
+        VESTT_VERSION: "0.1.0-dev"
+    image: vestt:local
+    container_name: vestt
+    restart: unless-stopped
+    # —— 方式一（默认）：端口映射 + 数据卷 ——
+    # 镜像 CMD 自带 --listenpublic，容器内绑定 0.0.0.0，映射端口开箱即用。
+    ports:
+      - "9117:9117"
+    volumes:
+      - vestt-data:/data
+    # —— 方式二：宿主机网络（Linux），无需端口映射，监听 127.0.0.1:9117 ——
+    # 取消注释以下两行并注释掉上方 ports/volumes：
+    # network_mode: host
+    # volumes: []          # host 模式下如需持久化，可改挂 ./data:/data
+    environment:
+      # 仅时区等环境项；Vestt 业务配置经 Web UI 写入 SQLite，不读环境变量
+      - TZ=UTC
+    healthcheck:
+      # 与镜像内置 HEALTHCHECK 一致；GET /health 为匿名端点
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:9117/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+  # —— FlareSolverr 旁路（可选）———————————————————————————————
+  # Cloudflare 盾站点经 FlareSolverr 求解；启用后取消注释本服务，
+  # 并在 Vestt Web UI「服务器设置」中把 FlareSolverr URL 设为
+  # http://flaresolverr:8191 （server config 的 flaresolverrurl 字段）。
+  #
+  # flaresolverr:
+  #   image: ghcr.io/flaresolverr/flaresolverr:latest
+  #   container_name: flaresolverr
+  #   environment:
+  #     - LOG_LEVEL=info
+  #   restart: unless-stopped
+
+volumes:
+  vestt-data:

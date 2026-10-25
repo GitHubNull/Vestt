@@ -69,14 +69,12 @@ func TestLoadAllDecoding(t *testing.T) {
 		t.Fatal("thepiratebay categorymappings missing")
 	}
 
-	// login blocks decode
+	// login blocks decode (form logins may legitimately have no static
+	// inputs, which LoadAll must accept)
 	withLogin := 0
 	for _, def := range defs {
 		if def.Login != nil && def.Login.Method != "" {
 			withLogin++
-			if def.Login.Inputs == nil && def.Login.Method == "form" {
-				// form logins may legitimately have no static inputs
-			}
 		}
 	}
 	if withLogin == 0 {

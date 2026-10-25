@@ -46,17 +46,17 @@ type TorrentPotatoResponse struct {
 
 // TorrentPotatoResponseItem mirrors upstream DTO/TorrentPotatoResponseItem.cs.
 type TorrentPotatoResponseItem struct {
-	ReleaseName  string `json:"release_name"`
-	TorrentID    string `json:"torrent_id"`
-	DetailsURL   string `json:"details_url"`
-	DownloadURL  string `json:"download_url"`
-	ImdbID       string `json:"imdb_id"`
-	Freeleech    bool   `json:"freeleech"`
-	Type         string `json:"type"`
-	Size         int64  `json:"size"`
-	Leechers     int64  `json:"leechers"`
-	Seeders      int64  `json:"seeders"`
-	PublishDate  string `json:"publish_date"`
+	ReleaseName string `json:"release_name"`
+	TorrentID   string `json:"torrent_id"`
+	DetailsURL  string `json:"details_url"`
+	DownloadURL string `json:"download_url"`
+	ImdbID      string `json:"imdb_id"`
+	Freeleech   bool   `json:"freeleech"`
+	Type        string `json:"type"`
+	Size        int64  `json:"size"`
+	Leechers    int64  `json:"leechers"`
+	Seeders     int64  `json:"seeders"`
+	PublishDate string `json:"publish_date"`
 }
 
 // splitCSV splits a comma-separated query parameter, trimming spaces and

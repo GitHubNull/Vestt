@@ -114,14 +114,14 @@ func formLoginHandler(f *loginFixture, onLogin func(http.ResponseWriter, *http.R
 		if r.URL.Path == "/login" {
 			if r.Method == http.MethodGet {
 				w.Header().Set("Content-Type", "text/html")
-				fmt.Fprint(w, loginPage)
+				_, _ = fmt.Fprint(w, loginPage)
 				return
 			}
 			onLogin(w, r)
 			return
 		}
 		w.Header().Set("Content-Type", "text/html")
-		fmt.Fprint(w, `<html><body><div id="loggedin">welcome</div></body></html>`)
+		_, _ = fmt.Fprint(w, `<html><body><div id="loggedin">welcome</div></body></html>`)
 	})
 	return mux
 }
@@ -141,7 +141,7 @@ func TestLoginFormSuccess(t *testing.T) {
 		if r.PostForm.Get("username") == "alice" && r.PostForm.Get("password") == "secret" {
 			http.SetCookie(w, &http.Cookie{Name: "session", Value: "abc"})
 			w.Header().Set("Content-Type", "text/html")
-			fmt.Fprint(w, `<html><body>ok</body></html>`)
+			_, _ = fmt.Fprint(w, `<html><body>ok</body></html>`)
 			return
 		}
 		w.WriteHeader(http.StatusForbidden)
@@ -189,7 +189,7 @@ func TestLoginFormErrorSelector(t *testing.T) {
 	f := newFormFixture(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(http.StatusForbidden)
-		fmt.Fprint(w, `<html><body><div class="error">Invalid credentials</div></body></html>`)
+		_, _ = fmt.Fprint(w, `<html><body><div class="error">Invalid credentials</div></body></html>`)
 	})
 	def := f.baseDef()
 	def.Login = &LoginBlock{
@@ -214,7 +214,7 @@ func TestLoginFormErrorSelector(t *testing.T) {
 func TestLoginFormTwoFactorInputs(t *testing.T) {
 	f := newFormFixture(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
-		fmt.Fprint(w, `<html><body>ok</body></html>`)
+		_, _ = fmt.Fprint(w, `<html><body>ok</body></html>`)
 	})
 	def := f.baseDef()
 	def.Settings = []*SettingsField{
@@ -272,7 +272,7 @@ func TestLoginCookieMethod(t *testing.T) {
 func TestLoginFormSubmitpath(t *testing.T) {
 	f := newFormFixture(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
-		fmt.Fprint(w, `<html><body>ok</body></html>`)
+		_, _ = fmt.Fprint(w, `<html><body>ok</body></html>`)
 	})
 	def := f.baseDef()
 	def.Login = &LoginBlock{
@@ -329,17 +329,17 @@ func TestLoginCaptchaImage(t *testing.T) {
 		switch r.URL.Path {
 		case "/login":
 			w.Header().Set("Content-Type", "text/html")
-			fmt.Fprint(w, `<html><body><form method="post" action="/login">
+			_, _ = fmt.Fprint(w, `<html><body><form method="post" action="/login">
 			  <img id="captcha" src="/captcha.jpg"/>
 			  <input type="text" name="username"/><input type="password" name="password"/>
 			  <input type="text" name="captcha"/>
 			</form></body></html>`)
 		case "/captcha.jpg":
 			w.Header().Set("Content-Type", "image/jpeg")
-			fmt.Fprint(w, "FAKEJPEG")
+			_, _ = fmt.Fprint(w, "FAKEJPEG")
 		default:
 			w.Header().Set("Content-Type", "text/html")
-			fmt.Fprint(w, `<html><body>ok</body></html>`)
+			_, _ = fmt.Fprint(w, `<html><body>ok</body></html>`)
 		}
 	})
 
@@ -390,7 +390,7 @@ func TestLoginCaptchaImage(t *testing.T) {
 func TestLoginHeadersInjected(t *testing.T) {
 	f := newFormFixture(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
-		fmt.Fprint(w, `<html><body>ok</body></html>`)
+		_, _ = fmt.Fprint(w, `<html><body>ok</body></html>`)
 	})
 	def := f.baseDef()
 	def.Login = &LoginBlock{
@@ -424,7 +424,7 @@ func TestLoginGetMethod(t *testing.T) {
 		f.record(r)
 		gotQuery = r.URL.RawQuery
 		w.Header().Set("Content-Type", "text/html")
-		fmt.Fprint(w, `<html><body>ok</body></html>`)
+		_, _ = fmt.Fprint(w, `<html><body>ok</body></html>`)
 	}))
 	t.Cleanup(f.srv.Close)
 	def := f.baseDef()
@@ -455,10 +455,10 @@ func TestLoginSelectorInputs(t *testing.T) {
 		f.record(r)
 		w.Header().Set("Content-Type", "text/html")
 		if r.URL.Path == "/login" && r.Method == http.MethodGet {
-			fmt.Fprint(w, page)
+			_, _ = fmt.Fprint(w, page)
 			return
 		}
-		fmt.Fprint(w, `<html><body>ok</body></html>`)
+		_, _ = fmt.Fprint(w, `<html><body>ok</body></html>`)
 	}))
 	t.Cleanup(f.srv.Close)
 	def := f.baseDef()
@@ -488,10 +488,10 @@ func TestLoginFormCheckedCheckbox(t *testing.T) {
 		f.record(r)
 		w.Header().Set("Content-Type", "text/html")
 		if r.URL.Path == "/login" && r.Method == http.MethodGet {
-			fmt.Fprint(w, page)
+			_, _ = fmt.Fprint(w, page)
 			return
 		}
-		fmt.Fprint(w, `<html><body>ok</body></html>`)
+		_, _ = fmt.Fprint(w, `<html><body>ok</body></html>`)
 	}))
 	t.Cleanup(f.srv.Close)
 	def := f.baseDef()
@@ -520,10 +520,10 @@ func TestLoginTestSelectorMismatch(t *testing.T) {
 		f.record(r)
 		w.Header().Set("Content-Type", "text/html")
 		if r.URL.Path == "/login" && r.Method == http.MethodGet {
-			fmt.Fprint(w, loginPage)
+			_, _ = fmt.Fprint(w, loginPage)
 			return
 		}
-		fmt.Fprint(w, `<html><body>no marker here</body></html>`)
+		_, _ = fmt.Fprint(w, `<html><body>no marker here</body></html>`)
 	}))
 	t.Cleanup(f.srv.Close)
 	def := f.baseDef()

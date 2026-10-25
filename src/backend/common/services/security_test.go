@@ -13,7 +13,7 @@ func newTestSecurity(t *testing.T) *SecurityService {
 	if err != nil {
 		t.Fatalf("open store: %v", err)
 	}
-	t.Cleanup(func() { s.Close() })
+	t.Cleanup(func() { _ = s.Close() })
 	return NewSecurityService(s)
 }
 

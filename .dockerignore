@@ -1,0 +1,16 @@
+# 构建上下文瘦身（w-rel 验证：未排除时上下文 ~379MB）
+.git/
+dist/
+tmp/
+.scratch/
+doc/
+install/
+*.db
+*.out
+cover.out
+Dockerfile
+docker-compose.yml
+.dockerignore
+src/frontend/node_modules/
+src/frontend/dist/
+src/backend/dist/

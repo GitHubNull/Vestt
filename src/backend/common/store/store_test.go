@@ -16,7 +16,7 @@ func TestMigrateIdempotent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 
 	// Re-run migrations on an already-migrated store: must be a no-op.
 	if err := s.migrate(); err != nil {
@@ -38,7 +38,7 @@ func TestTableStructure(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 
 	want := map[string][]string{
 		"server_config":  {"id", "config_json", "updated_at"},
@@ -70,7 +70,7 @@ func TestServerConfigRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 
 	if _, err := s.GetServerConfig(ctx); !errors.Is(err, sql.ErrNoRows) {
 		t.Fatalf("expected sql.ErrNoRows for missing config, got %v", err)
@@ -107,7 +107,7 @@ func TestSessionsLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 
 	sess, err := s.GetSession(ctx, "missing")
 	if err != nil || sess != nil {
@@ -165,7 +165,7 @@ func TestLogsAppendListTrim(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 
 	when := time.Now().UTC().Truncate(time.Second)
 	if err := s.AppendLog(ctx, "INFO", "first", when); err != nil {

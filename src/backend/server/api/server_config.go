@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -23,7 +24,36 @@ type ServerConfigHandlers struct {
 
 // GetConfig handles GET /api/v2.0/server/config.
 func (h *ServerConfigHandlers) GetConfig(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, h.Config.DTO())
+	dto := h.Config.DTO()
+	// latest_version (backend-api.md §1.1, SPEC-14): omitted entirely when
+	// no successful update check was recorded yet.
+	if latest, ok := h.lastKnownLatestVersion(r.Context()); ok {
+		writeJSON(w, http.StatusOK, struct {
+			*services.ConfigDTO
+			LatestVersion string `json:"latest_version,omitempty"`
+		}{ConfigDTO: dto, LatestVersion: latest})
+		return
+	}
+	writeJSON(w, http.StatusOK, dto)
+}
+
+// lastKnownLatestVersion reads the tag recorded by the last successful
+// update check (saved_state.update.latest_version); a corrupt row is
+// reported as "never checked" instead of failing the config endpoint.
+func (h *ServerConfigHandlers) lastKnownLatestVersion(ctx context.Context) (string, bool) {
+	raw, ok, err := h.Config.State(ctx, stateKeyLatestVersion)
+	if err != nil {
+		slog.Warn("read update latest_version failed", "error", utils.Sanitize(err.Error()))
+		return "", false
+	}
+	if !ok {
+		return "", false
+	}
+	var tag string
+	if err := json.Unmarshal([]byte(raw), &tag); err != nil || tag == "" {
+		return "", false
+	}
+	return tag, true
 }
 
 // UpdateConfig handles POST /api/v2.0/server/config (§1.2).
@@ -112,10 +142,12 @@ func (h *ServerConfigHandlers) Logs(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, h.Ring.List())
 }
 
-// Update handles POST /api/v2.0/server/update (§1.5): Vestt only logs a
-// version check; no binary replacement (backend-api.md §8).
+// Update handles POST /api/v2.0/server/update (§1.5): checks the latest
+// GitHub release, records it in saved_state and logs when a newer version
+// exists. Self-update is not supported (backend-api.md §8); failures are
+// logged, the response stays 204.
 func (h *ServerConfigHandlers) Update(w http.ResponseWriter, r *http.Request) {
-	slog.Info("update check requested (self-update not supported; check releases manually)")
+	h.checkForUpdate(r.Context())
 	w.WriteHeader(http.StatusNoContent)
 }
 

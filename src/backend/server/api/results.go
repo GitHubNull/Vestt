@@ -302,9 +302,9 @@ type metaIndexers interface {
 
 // manualTask is one fan-out task's outcome.
 type manualTask struct {
-	idx     indexer.Indexer
-	result  *indexer.IndexerResult
-	err     error
+	idx    indexer.Indexer
+	result *indexer.IndexerResult
+	err    error
 }
 
 // ManualSearch serves GET .../results (upstream Results action).

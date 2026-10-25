@@ -160,7 +160,7 @@ func (x *Cardigann) applyFilters(data string, filters []FilterBlock, vars Templa
 		case "hexdump":
 			var sb strings.Builder
 			for _, c := range data {
-				sb.WriteString(fmt.Sprintf("%c(%02X)", c, c))
+				fmt.Fprintf(&sb, "%c(%02X)", c, c)
 			}
 			x.log().Debug(fmt.Sprintf("CardigannIndexer (%s): strdump: %s", x.ID(), sb.String()))
 		case "strdump":

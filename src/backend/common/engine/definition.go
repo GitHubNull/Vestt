@@ -285,13 +285,6 @@ func keyLookup(n *yaml.Node, name string) *yaml.Node {
 
 func hasKey(n *yaml.Node, name string) bool { return keyLookup(n, name) != nil }
 
-func decodeScalar(n *yaml.Node, out any) error {
-	if n == nil {
-		return nil
-	}
-	return n.Decode(out)
-}
-
 func decodeString(n *yaml.Node) string {
 	if n == nil {
 		return ""
@@ -301,17 +294,6 @@ func decodeString(n *yaml.Node) string {
 		return ""
 	}
 	return s
-}
-
-func decodeStringPtr(n *yaml.Node) *string {
-	if n == nil {
-		return nil
-	}
-	var s string
-	if err := n.Decode(&s); err != nil {
-		return nil
-	}
-	return &s
 }
 
 func decodeStringList(n *yaml.Node) []string {
@@ -389,11 +371,11 @@ func nodeToValue(n *yaml.Node) any {
 			return n.Value == "true"
 		case "!!int":
 			var i int64
-			fmt.Sscanf(n.Value, "%d", &i)
+			_, _ = fmt.Sscanf(n.Value, "%d", &i) // parse failure falls through to the zero value
 			return i
 		case "!!float":
 			var f float64
-			fmt.Sscanf(n.Value, "%g", &f)
+			_, _ = fmt.Sscanf(n.Value, "%g", &f) // parse failure falls through to the zero value
 			return f
 		default:
 			return n.Value

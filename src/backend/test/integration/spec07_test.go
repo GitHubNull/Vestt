@@ -116,7 +116,7 @@ func TestTorznabCaps(t *testing.T) {
 	e := newTestEnv(t)
 	e.configureIndexer(t, "fakegood")
 	resp := e.get(t, "/api/v2.0/indexers/fakegood/results/torznab/?apikey="+e.apiKey()+"&t=caps")
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("status: %d", resp.StatusCode)
 	}
@@ -145,7 +145,7 @@ func TestTorznabSearchAllTypes(t *testing.T) {
 		if len(got) != 2 || got[0] != "Good Release A" || got[1] != "Good Release B" {
 			t.Fatalf("%s: items %v", typ, got)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 }
 
@@ -162,14 +162,14 @@ func TestTorznabErrorMatrix(t *testing.T) {
 	if e := readErrorXML(t, resp); e.Code != 100 {
 		t.Fatalf("no-apikey: %+v", e)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// unknown indexer → 500 (upstream GetWebIndexer throws inside the filter)
 	resp = e.get(t, "/api/v2.0/indexers/nosuch/results/torznab/?apikey="+key+"&t=search&q=x")
 	if resp.StatusCode != http.StatusInternalServerError {
 		t.Fatalf("unknown indexer status: %d", resp.StatusCode)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// unconfigured indexer → 200 + code 201
 	resp = e.get(t, "/api/v2.0/indexers/faketv/results/torznab/?apikey="+key+"&t=search&q=x")
@@ -179,7 +179,7 @@ func TestTorznabErrorMatrix(t *testing.T) {
 	if e := readErrorXML(t, resp); e.Code != 201 || !strings.Contains(e.Description, "not configured") {
 		t.Fatalf("unconfigured: %+v", e)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// now configure faketv: upstream filter order checks IsConfigured before
 	// capabilities, so both following sub-checks need a configured indexer
@@ -193,7 +193,7 @@ func TestTorznabErrorMatrix(t *testing.T) {
 	if e := readErrorXML(t, resp); e.Code != 201 || !strings.Contains(e.Description, "does not support the requested query") {
 		t.Fatalf("capability: %+v", e)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// non-meta indexer asked for t=indexers → 200 + code 201: upstream
 	// RequiresValidQuery runs CanHandleQuery first, which rejects the
@@ -204,21 +204,21 @@ func TestTorznabErrorMatrix(t *testing.T) {
 	if e := readErrorXML(t, resp); e.Code != 201 || !strings.Contains(e.Description, "does not support the requested query") {
 		t.Fatalf("t=indexers on non-meta: %+v", e)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// invalid imdbid → 200 + code 201
 	resp = e.get(t, "/api/v2.0/indexers/fakegood/results/torznab/?apikey="+key+"&t=movie&imdbid=notanid")
 	if e := readErrorXML(t, resp); e.Code != 201 || e.Description != "Incorrect parameter: invalid imdbid format" {
 		t.Fatalf("invalid imdbid: %+v", e)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// tv imdb unsupported → 200 + code 203
 	resp = e.get(t, "/api/v2.0/indexers/faketv/results/torznab/?apikey="+key+"&t=tvsearch&imdbid=tt0001234")
 	if e := readErrorXML(t, resp); e.Code != 203 || !strings.Contains(e.Description, "imdbid is not supported for TV search") {
 		t.Fatalf("tv imdb: %+v", e)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 func TestTorznabIndexersListing(t *testing.T) {
@@ -226,7 +226,7 @@ func TestTorznabIndexersListing(t *testing.T) {
 	e.configureIndexer(t, "fakegood")
 
 	resp := e.get(t, "/api/v2.0/indexers/all/results/torznab/?apikey="+e.apiKey()+"&t=indexers&configured=true")
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("status: %d", resp.StatusCode)
 	}
@@ -254,7 +254,7 @@ func TestTorznabImdbNormalization(t *testing.T) {
 		if strings.Contains(body, "<error") {
 			t.Fatalf("imdbid=%s rejected: %s", imdb, body)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 }
 
@@ -265,7 +265,7 @@ func TestTorznab429(t *testing.T) {
 	defer fixtures.SetBehavior(func(b *fixtures.Behavior) { b.GoodPath = "/page" })
 
 	resp := e.get(t, "/api/v2.0/indexers/fakegood/results/torznab/?apikey="+e.apiKey()+"&t=search&q=x")
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusTooManyRequests {
 		t.Fatalf("status: %d", resp.StatusCode)
 	}
@@ -286,14 +286,14 @@ func TestCacheHitMissAndTTL(t *testing.T) {
 
 	resp := e.get(t, url)
 	env1 := decodeRSS(t, resp)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if h := e.site.Hits(); h != 1 {
 		t.Fatalf("first search should hit the site once, got %d", h)
 	}
 
 	resp = e.get(t, url)
 	env2 := decodeRSS(t, resp)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if h := e.site.Hits(); h != 1 {
 		t.Fatalf("second search must be served from cache, site hits %d", h)
 	}
@@ -303,11 +303,11 @@ func TestCacheHitMissAndTTL(t *testing.T) {
 
 	// shrink the TTL to 1s, wait for expiry, expect a re-fetch
 	resp = e.post(t, "/api/v2.0/server/config", "application/json", []byte(`{"cache_ttl": 1}`))
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	time.Sleep(1100 * time.Millisecond)
 
 	resp = e.get(t, url)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if h := e.site.Hits(); h != 2 {
 		t.Fatalf("expired entry must re-fetch, site hits %d", h)
 	}
@@ -317,7 +317,7 @@ func TestCacheViewConsistency(t *testing.T) {
 	e := newTestEnv(t)
 	e.configureIndexer(t, "fakegood")
 	resp := e.get(t, "/api/v2.0/indexers/fakegood/results/torznab/?apikey="+e.apiKey()+"&t=search&q=x")
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// both releases appear in the cache view, labelled with the tracker name
 	resp = e.get(t, "/api/v2.0/indexers/Cache")
@@ -325,7 +325,7 @@ func TestCacheViewConsistency(t *testing.T) {
 	if err := json.NewDecoder(resp.Body).Decode(&view); err != nil {
 		t.Fatalf("cache view decode: %v", err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if len(view) != 2 {
 		t.Fatalf("cache view rows: %d", len(view))
 	}
@@ -338,14 +338,14 @@ func TestCacheViewConsistency(t *testing.T) {
 	if resp.StatusCode != http.StatusNoContent {
 		t.Fatalf("delete status: %d", resp.StatusCode)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	resp = e.get(t, "/api/v2.0/indexers/Cache")
 	view = nil
 	if err := json.NewDecoder(resp.Body).Decode(&view); err != nil {
 		t.Fatalf("cache view decode: %v", err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if len(view) != 0 {
 		t.Fatalf("cache view after delete: %d rows", len(view))
 	}
@@ -371,7 +371,7 @@ type manualResult struct {
 func manualSearch(t *testing.T, e *testEnv, query string) manualResult {
 	t.Helper()
 	resp := e.get(t, "/api/v2.0/indexers/all/results?apikey="+e.apiKey()+query)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("manual search status: %d (%s)", resp.StatusCode, bodyString(t, resp))
 	}
@@ -449,7 +449,7 @@ func TestPotatoGolden(t *testing.T) {
 	e.configureIndexer(t, "fakegood")
 
 	resp := e.get(t, "/api/v2.0/indexers/fakegood/results/potato/?apikey="+e.apiKey()+"&search=good")
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("status: %d (%s)", resp.StatusCode, bodyString(t, resp))
 	}
@@ -521,19 +521,19 @@ func TestDownloadProxy(t *testing.T) {
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("wrong key: %d", resp.StatusCode)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// unconfigured indexer → 403
 	resp = e.get(t, "/dl/faketv/?jackett_apikey="+e.apiKey()+"&path="+b64url(e.site.URL+"/torrent")+"&file=x")
 	if resp.StatusCode != http.StatusForbidden {
 		t.Fatalf("unconfigured: %d", resp.StatusCode)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// discover the proxied link from the RSS feed, then download through it
 	resp = e.get(t, "/api/v2.0/indexers/fakegood/results/torznab/?apikey="+e.apiKey()+"&t=search&q=x")
 	env := decodeRSS(t, resp)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if len(env.Channel.Items) == 0 || !strings.HasPrefix(env.Channel.Items[0].Link, e.srv.URL+"/dl/fakegood/") {
 		t.Fatalf("RSS link not proxied: %+v", env.Channel.Items)
 	}
@@ -542,7 +542,7 @@ func TestDownloadProxy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer dl.Body.Close()
+	defer func() { _ = dl.Body.Close() }()
 	if dl.StatusCode != http.StatusOK {
 		t.Fatalf("download status: %d", dl.StatusCode)
 	}
@@ -565,7 +565,7 @@ func TestDownloadProxyNotFound(t *testing.T) {
 	e := newTestEnv(t)
 	e.configureIndexer(t, "fakegood")
 	resp := e.get(t, "/dl/nosuch/?jackett_apikey="+e.apiKey()+"&path="+b64url(e.site.URL+"/torrent")+"&file=x")
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusNotFound {
 		t.Fatalf("unknown indexer download: %d", resp.StatusCode)
 	}
@@ -585,14 +585,14 @@ func TestImageProxy(t *testing.T) {
 	if b := bodyString(t, resp); b != "PNG-BYTES" {
 		t.Fatalf("body: %q", b)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// non-OK upstream status passes through
 	resp = e.get(t, "/img/fakegood/?jackett_apikey="+e.apiKey()+"&path="+b64url(e.site.URL+"/notfound"))
 	if resp.StatusCode != http.StatusNotFound {
 		t.Fatalf("passthrough status: %d", resp.StatusCode)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 func TestBlackholeProxy(t *testing.T) {
@@ -607,13 +607,13 @@ func TestBlackholeProxy(t *testing.T) {
 	if err := json.NewDecoder(resp.Body).Decode(&reply); err != nil {
 		t.Fatal(err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if reply["result"] != "error" || reply["error"] != "Blackhole directory not set!" {
 		t.Fatalf("reply: %v", reply)
 	}
 
 	resp = e.post(t, "/api/v2.0/server/config", "application/json", []byte(fmt.Sprintf(`{"blackholedir": %q}`, dir)))
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// magnet → .magnet file holding the magnet string
 	resp = e.get(t, "/bh/fakegood/?jackett_apikey="+e.apiKey()+"&path="+b64url(magnet)+"&file=Good+Release+B")
@@ -621,7 +621,7 @@ func TestBlackholeProxy(t *testing.T) {
 	if err := json.NewDecoder(resp.Body).Decode(&reply); err != nil {
 		t.Fatal(err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if reply["result"] != "success" {
 		t.Fatalf("magnet reply: %v", reply)
 	}
@@ -647,7 +647,7 @@ func TestBlackholeProxy(t *testing.T) {
 	if err := json.NewDecoder(resp.Body).Decode(&reply); err != nil {
 		t.Fatal(err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if reply["result"] != "success" {
 		t.Fatalf("torrent reply: %v", reply)
 	}
@@ -673,7 +673,7 @@ func TestCardigannFixtureIndexer(t *testing.T) {
 	url := "/api/v2.0/indexers/fakecardigann/results/torznab/?apikey=" + e.apiKey() + "&t=search&q=cardigann"
 	resp := e.get(t, url)
 	env := decodeRSS(t, resp)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	got := titles(env)
 	if len(got) != 1 || got[0] != "Cardigann Release" {
 		t.Fatalf("cardigann items: %v", got)
@@ -684,14 +684,14 @@ func TestCardigannFixtureIndexer(t *testing.T) {
 
 	// identical query is served from the result cache
 	resp = e.get(t, url)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if s := e.site.Searches(); s != 1 {
 		t.Fatalf("second search must hit cache, site searches: %d", s)
 	}
 
 	// and it aggregates through the meta indexer
 	resp = e.get(t, "/api/v2.0/indexers/all/results?apikey="+e.apiKey()+"&query=cardigann")
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	var m manualResult
 	if err := json.NewDecoder(resp.Body).Decode(&m); err != nil {
 		t.Fatal(err)
@@ -714,7 +714,7 @@ func TestIndexerListDTO(t *testing.T) {
 	e.configureIndexer(t, "fakegood")
 
 	resp := e.get(t, "/api/v2.0/indexers?configured=false")
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	var list []map[string]any
 	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
 		t.Fatal(err)
@@ -754,7 +754,7 @@ func TestIndexerListDTO(t *testing.T) {
 	// configured=true only returns configured indexers
 	e.configureIndexer(t, "faketv")
 	resp2 := e.get(t, "/api/v2.0/indexers?configured=true")
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 	var conf []map[string]any
 	if err := json.NewDecoder(resp2.Body).Decode(&conf); err != nil {
 		t.Fatal(err)
@@ -786,8 +786,8 @@ func TestFanoutPerformance(t *testing.T) {
 				t.Errorf("request: %v", err)
 				return
 			}
-			io.Copy(io.Discard, resp.Body)
-			resp.Body.Close()
+			_, _ = io.Copy(io.Discard, resp.Body)
+			_ = resp.Body.Close()
 			lat[i] = time.Since(s)
 		}(i)
 	}

@@ -160,7 +160,7 @@ type SearchMode struct {
 // .ParseCardigannSearchModes including its validation errors.
 func (c *Capabilities) ParseCardigannSearchModes(modes []SearchMode) error {
 	if len(modes) == 0 {
-		return fmt.Errorf("At least one search mode is required")
+		return fmt.Errorf("At least one search mode is required") //nolint:staticcheck // 上游文案 TorznabCapabilities.cs:125
 	}
 	hasSearch := false
 	for _, m := range modes {
@@ -170,22 +170,22 @@ func (c *Capabilities) ParseCardigannSearchModes(modes []SearchMode) error {
 		}
 	}
 	if !hasSearch {
-		return fmt.Errorf("The search mode 'search' is mandatory")
+		return fmt.Errorf("The search mode 'search' is mandatory") //nolint:staticcheck // 上游文案 TorznabCapabilities.cs:127
 	}
 	for _, m := range modes {
 		switch m.Key {
 		case "search":
 			if len(m.Params) != 1 || m.Params[0] != "q" {
-				return fmt.Errorf("In search mode 'search' only 'q' parameter is supported and it's mandatory")
+				return fmt.Errorf("In search mode 'search' only 'q' parameter is supported and it's mandatory") //nolint:staticcheck // 上游文案 TorznabCapabilities.cs:133
 			}
 		case "tv-search":
 			for _, p := range m.Params {
 				name, ok := tvSearchParamNames[strings.ToLower(p)]
 				if !ok {
-					return fmt.Errorf("Not supported tv-search param: %s", p)
+					return fmt.Errorf("Not supported tv-search param: %s", p) //nolint:staticcheck // 上游文案 TorznabCapabilities.cs:163
 				}
 				if contains(c.TVSearchParams, name) {
-					return fmt.Errorf("Duplicate tv-search param: %s", p)
+					return fmt.Errorf("Duplicate tv-search param: %s", p) //nolint:staticcheck // 上游文案 TorznabCapabilities.cs:161
 				}
 				c.TVSearchParams = append(c.TVSearchParams, name)
 			}
@@ -193,10 +193,10 @@ func (c *Capabilities) ParseCardigannSearchModes(modes []SearchMode) error {
 			for _, p := range m.Params {
 				name, ok := movieSearchParamNames[strings.ToLower(p)]
 				if !ok {
-					return fmt.Errorf("Not supported movie-search param: %s", p)
+					return fmt.Errorf("Not supported movie-search param: %s", p) //nolint:staticcheck // 上游文案 TorznabCapabilities.cs:177
 				}
 				if contains(c.MovieSearchParams, name) {
-					return fmt.Errorf("Duplicate movie-search param: %s", p)
+					return fmt.Errorf("Duplicate movie-search param: %s", p) //nolint:staticcheck // 上游文案 TorznabCapabilities.cs:175
 				}
 				c.MovieSearchParams = append(c.MovieSearchParams, name)
 			}
@@ -204,10 +204,10 @@ func (c *Capabilities) ParseCardigannSearchModes(modes []SearchMode) error {
 			for _, p := range m.Params {
 				name, ok := musicSearchParamNames[strings.ToLower(p)]
 				if !ok {
-					return fmt.Errorf("Not supported music-search param: %s", p)
+					return fmt.Errorf("Not supported music-search param: %s", p) //nolint:staticcheck // 上游文案 TorznabCapabilities.cs:191
 				}
 				if contains(c.MusicSearchParams, name) {
-					return fmt.Errorf("Duplicate music-search param: %s", p)
+					return fmt.Errorf("Duplicate music-search param: %s", p) //nolint:staticcheck // 上游文案 TorznabCapabilities.cs:189
 				}
 				c.MusicSearchParams = append(c.MusicSearchParams, name)
 			}
@@ -215,15 +215,15 @@ func (c *Capabilities) ParseCardigannSearchModes(modes []SearchMode) error {
 			for _, p := range m.Params {
 				name, ok := bookSearchParamNames[strings.ToLower(p)]
 				if !ok {
-					return fmt.Errorf("Not supported book-search param: %s", p)
+					return fmt.Errorf("Not supported book-search param: %s", p) //nolint:staticcheck // 上游文案 TorznabCapabilities.cs:205
 				}
 				if contains(c.BookSearchParams, name) {
-					return fmt.Errorf("Duplicate book-search param: %s", p)
+					return fmt.Errorf("Duplicate book-search param: %s", p) //nolint:staticcheck // 上游文案 TorznabCapabilities.cs:203
 				}
 				c.BookSearchParams = append(c.BookSearchParams, name)
 			}
 		default:
-			return fmt.Errorf("Unsupported search mode: %s", m.Key)
+			return fmt.Errorf("Unsupported search mode: %s", m.Key) //nolint:staticcheck // 上游文案 TorznabCapabilities.cs:148
 		}
 	}
 	return nil

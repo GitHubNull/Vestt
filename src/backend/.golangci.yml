@@ -1,0 +1,11 @@
+# SPEC-14 §3.1 质量门禁：golangci-lint v2 配置（v2 schema 与 v1 不兼容，勿混用）。
+# 启用 errcheck / staticcheck / govet（此三者在 v2 默认集中已启用，此处显式声明以固定
+# SPEC 要求，防止默认集变更导致静默失效）；其余保持默认。
+# 校验：golangci-lint config verify && golangci-lint run ./...
+version: "2"
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - staticcheck

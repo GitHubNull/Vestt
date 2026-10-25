@@ -250,7 +250,7 @@ func (m *IndexerManagerService) GetIndexer(name string) (indexer.Indexer, error)
 		m.filters[name] = f
 		return f, nil
 	}
-	return nil, fmt.Errorf("Unknown indexer: %s", name)
+	return nil, fmt.Errorf("Unknown indexer: %s", name) //nolint:staticcheck // 上游文案 IndexerManagerService.cs:328
 }
 
 // GetConfiguredIndexers returns configured non-meta indexers.

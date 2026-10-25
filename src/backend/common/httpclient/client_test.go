@@ -49,7 +49,7 @@ func TestRateLimitSerializesSameIndexer(t *testing.T) {
 		mu.Lock()
 		starts = append(starts, time.Now())
 		mu.Unlock()
-		fmt.Fprint(w, "ok")
+		_, _ = fmt.Fprint(w, "ok")
 	}))
 	defer srv.Close()
 
@@ -100,10 +100,10 @@ func TestCookiePersistence(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/login" {
 			http.SetCookie(w, &http.Cookie{Name: "session", Value: "abc123", Path: "/"})
-			fmt.Fprint(w, "logged in")
+			_, _ = fmt.Fprint(w, "logged in")
 			return
 		}
-		fmt.Fprint(w, "cookie:"+r.Header.Get("Cookie"))
+		_, _ = fmt.Fprint(w, "cookie:"+r.Header.Get("Cookie"))
 	}))
 	defer srv.Close()
 
@@ -148,7 +148,7 @@ func TestCookiePersistence(t *testing.T) {
 // (upstream cookieOverride ?? CookieHeader).
 func TestCookieOverride(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, r.Header.Get("Cookie"))
+		_, _ = fmt.Fprint(w, r.Header.Get("Cookie"))
 	}))
 	defer srv.Close()
 
@@ -167,7 +167,7 @@ func TestCookieOverride(t *testing.T) {
 // error; disabled proxy connects fine.
 func TestProxySOCKS5Failure(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "hi")
+		_, _ = fmt.Fprint(w, "hi")
 	}))
 	defer srv.Close()
 
@@ -203,7 +203,7 @@ func TestCloudflareFlareSolverr(t *testing.T) {
 		if req["cmd"] != "request.get" {
 			t.Errorf("cmd: %v", req["cmd"])
 		}
-		fmt.Fprint(w, `{
+		_, _ = fmt.Fprint(w, `{
 			"status": "ok",
 			"solution": {
 				"url": "https://tracker.example/",
@@ -223,10 +223,10 @@ func TestCloudflareFlareSolverr(t *testing.T) {
 		if challengeHits.Add(1) == 1 {
 			w.Header().Set("Cf-Mitigated", "challenge")
 			w.WriteHeader(http.StatusForbidden)
-			fmt.Fprint(w, "<html>__cf_chl_f_tk</html>")
+			_, _ = fmt.Fprint(w, "<html>__cf_chl_f_tk</html>")
 			return
 		}
-		fmt.Fprint(w, "real content")
+		_, _ = fmt.Fprint(w, "real content")
 	}))
 	defer site.Close()
 
@@ -251,7 +251,7 @@ func TestCloudflareFlareSolverr(t *testing.T) {
 func TestCloudflareNoSolver(t *testing.T) {
 	site := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		fmt.Fprint(w, "<html>cf-browser-verification</html>")
+		_, _ = fmt.Fprint(w, "<html>cf-browser-verification</html>")
 	}))
 	defer site.Close()
 
@@ -306,7 +306,7 @@ func TestRetryOnServerError(t *testing.T) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		fmt.Fprint(w, "ok")
+		_, _ = fmt.Fprint(w, "ok")
 	}))
 	defer srv.Close()
 
@@ -334,7 +334,7 @@ func TestRetryOnServerError(t *testing.T) {
 func TestHeadersAndDefaults(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
-		fmt.Fprintf(w, "%s|%s|%s|%s|%s",
+		_, _ = fmt.Fprintf(w, "%s|%s|%s|%s|%s",
 			r.Header.Get("User-Agent"), r.Header.Get("Accept"),
 			r.Header.Get("Accept-Language"), r.Header.Get("Content-Type"), string(body))
 	}))
@@ -372,13 +372,13 @@ func TestHeadersAndDefaults(t *testing.T) {
 // TestFlareSolverrFailure: a solver error response surfaces an error.
 func TestFlareSolverrFailure(t *testing.T) {
 	solver := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `{"status": "error", "message": "Error: Unable to process browser action. Timeout"}`)
+		_, _ = fmt.Fprint(w, `{"status": "error", "message": "Error: Unable to process browser action. Timeout"}`)
 	}))
 	defer solver.Close()
 
 	site := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
-		fmt.Fprint(w, "__cf_chl")
+		_, _ = fmt.Fprint(w, "__cf_chl")
 	}))
 	defer site.Close()
 

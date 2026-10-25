@@ -41,7 +41,7 @@ func New(app *App) http.Handler {
 	r := chi.NewRouter()
 	r.Use(chimiddleware.Recoverer)
 	r.Use(chimiddleware.RequestID)
-	r.Use(chimiddleware.RealIP)
+	r.Use(middleware.RealIP)
 	r.Use(basePathStrip(basePath))
 
 	// CORS: upstream allows everything when allow_cors is set.

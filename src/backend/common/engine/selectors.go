@@ -49,7 +49,7 @@ func (x *Cardigann) handleSelector(sel *SelectorBlock, dom *goquery.Selection, v
 		selection = querySelector(dom, selectorText)
 		if selection == nil || selection.Length() == 0 {
 			if required {
-				return "", fmt.Errorf("Selector %q didn't match", selectorText)
+				return "", fmt.Errorf("Selector %q didn't match", selectorText) //nolint:staticcheck // 上游文案 CardigannIndexer.cs:1311
 			}
 			return "", nil
 		}
@@ -72,7 +72,7 @@ func (x *Cardigann) handleSelector(sel *SelectorBlock, dom *goquery.Selection, v
 				for _, c := range sel.Case {
 					keys = append(keys, c.Key)
 				}
-				return "", fmt.Errorf("None of the case selectors %q matched", strings.Join(keys, ","))
+				return "", fmt.Errorf("None of the case selectors %q matched", strings.Join(keys, ",")) //nolint:staticcheck // 上游文案 CardigannIndexer.cs:1341
 			}
 			return "", nil
 		}
@@ -81,7 +81,7 @@ func (x *Cardigann) handleSelector(sel *SelectorBlock, dom *goquery.Selection, v
 		value, ok = selection.Attr(sel.Attribute)
 		if !ok {
 			if required {
-				return "", fmt.Errorf("Attribute %q is not set for element", sel.Attribute)
+				return "", fmt.Errorf("Attribute %q is not set for element", sel.Attribute) //nolint:staticcheck // 上游文案 CardigannIndexer.cs:1354
 			}
 			return "", nil
 		}

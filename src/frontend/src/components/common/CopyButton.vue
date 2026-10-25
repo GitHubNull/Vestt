@@ -33,7 +33,7 @@ function legacyCopy(text: string): boolean {
   const previous = document.activeElement as HTMLElement | null
   el.focus()
   el.setSelectionRange(0, el.value.length)
-  let ok = false
+  let ok: boolean
   try {
     ok = document.execCommand('copy')
   } catch {

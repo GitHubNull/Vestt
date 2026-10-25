@@ -239,7 +239,7 @@ func (h *ProxyHandlers) Blackhole(w http.ResponseWriter, r *http.Request) {
 	}
 	if !idx.IsConfigured() {
 		h.logger().Warn(fmt.Sprintf("Rejected a request to %s which is unconfigured.", idx.Name()))
-		fail(fmt.Errorf("This indexer is not configured."))
+		fail(fmt.Errorf("This indexer is not configured.")) //nolint:staticcheck // 上游文案 BlackholeController.cs:47
 		writeReply()
 		return
 	}
@@ -275,7 +275,7 @@ func (h *ProxyHandlers) Blackhole(w http.ResponseWriter, r *http.Request) {
 
 	blackholeDir := h.Config.Config().BlackholeDir
 	if strings.TrimSpace(blackholeDir) == "" {
-		fail(fmt.Errorf("Blackhole directory not set!"))
+		fail(fmt.Errorf("Blackhole directory not set!")) //nolint:staticcheck // 上游文案 BlackholeController.cs:77
 		writeReply()
 		return
 	}

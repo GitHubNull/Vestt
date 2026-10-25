@@ -1,0 +1,40 @@
+# Vestt systemd 单元文件（默认参数版）。
+#
+# 通常不需要手工使用本文件：install/install_service_systemd.sh 会按其命令行参数
+# （--user/--group/--install-path/--data-dir/--service-name/--port）生成单元文件并写入
+# /etc/systemd/system/<service-name>.service，其默认值与本文件一致。
+#
+# 也可直接使用本文件（默认布局：二进制 /opt/vestt/vestt，数据目录 /var/lib/vestt）：
+#   sudo install -m 0755 vestt /opt/vestt/vestt
+#   sudo mkdir -p /var/lib/vestt && sudo chown -R vestt:vestt /opt/vestt /var/lib/vestt
+#   sudo cp install/systemd/vestt.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now vestt
+#
+# Vestt = Jackett 0.24.2900 功能对等复刻（Go + SQLite，单二进制内嵌前端）。
+# 旗标说明：--port 0 表示使用配置值；--data-dir 决定 vestt.db 与日志位置。
+
+[Unit]
+Description=Vestt Daemon
+Documentation=https://github.com/GitHubNull/Vestt
+After=network.target
+
+[Service]
+SyslogIdentifier=vestt
+Restart=always
+RestartSec=5
+Type=simple
+User=vestt
+Group=vestt
+WorkingDirectory=/opt/vestt
+ExecStart=/opt/vestt/vestt --port 9117 --data-dir /var/lib/vestt
+TimeoutStopSec=30
+
+# 轻量沙箱。数据目录变化时同步修改 ReadWritePaths；
+# 若安装路径/数据目录位于 /home 之下，请自行追加保护项。
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/vestt
+
+[Install]
+WantedBy=multi-user.target

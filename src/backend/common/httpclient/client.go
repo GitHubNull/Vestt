@@ -260,7 +260,7 @@ func (c *Client) Do(ctx context.Context, indexerID string, req *Request) (*Resul
 			// server-error status: retriable per upstream
 			// { Result: { HasHttpServerError: true } } predicate
 			lastRes = res
-			lastErr = fmt.Errorf("Remote server returned %d", res.StatusCode)
+			lastErr = fmt.Errorf("Remote server returned %d", res.StatusCode) //nolint:staticcheck // 上游文案 BaseIndexer.cs:569
 			continue
 		}
 		lastErr = err
@@ -293,7 +293,7 @@ func (c *Client) doOnce(ctx context.Context, indexerID string, st *indexerState,
 		// network failures are retriable (upstream { Exception: {} } predicate)
 		return nil, true, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBodyBytes))
 	if err != nil {
@@ -400,7 +400,7 @@ func (c *Client) buildHTTPRequest(indexerID string, st *indexerState, req *Reque
 		headers["user-agent"] = ua
 	}
 	for k, v := range headers {
-		httpReq.Header.Set(http.CanonicalHeaderKey(k), v)
+		httpReq.Header.Set(k, v)
 	}
 
 	if len(req.Body) > 0 {

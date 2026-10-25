@@ -32,7 +32,9 @@
 ```bash
 make build            # 前端构建 + go build → dist/vestt
 make run              # 构建并启动（127.0.0.1:9117）
-make test            # go test -C src/backend ./... + go vet
+make test            # 质量门禁：go test(含覆盖率) + vet + golangci-lint + 覆盖率阈值 + 前端 typecheck/lint/vitest
+make smoke           # L3 冒烟（构建产物 → health/caps/搜索/下载代理）
+make release         # 6 平台发布产物（dist/release/）
 pnpm --dir src/frontend dev   # 前端开发（代理 API 到 9117）
 pnpm --dir src/frontend test  # 前端 vitest
 pnpm --dir src/frontend build # 前端构建（产物会 embed 进 Go）

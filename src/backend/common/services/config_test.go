@@ -13,7 +13,7 @@ func newTestConfig(t *testing.T) *ConfigService {
 	if err != nil {
 		t.Fatalf("open store: %v", err)
 	}
-	t.Cleanup(func() { s.Close() })
+	t.Cleanup(func() { _ = s.Close() })
 	cs := NewConfigService(s, "0.1.0-test")
 	if err := cs.Load(context.Background()); err != nil {
 		t.Fatalf("load: %v", err)
@@ -75,7 +75,6 @@ func TestDTOMaskAndShape(t *testing.T) {
 	}
 }
 
-func boolPtr(b bool) *bool    { return &b }
 func intPtr(i int) *int       { return &i }
 func strPtr(s string) *string { return &s }
 

@@ -57,7 +57,7 @@ func buildTransport(cfg ProxyConfig, connectTimeout time.Duration) (*http.Transp
 		t.DialContext = dial
 		return t, nil
 	}
-	return nil, fmt.Errorf("Proxy type '%d' is not implemented!", int(cfg.Type))
+	return nil, fmt.Errorf("Proxy type '%d' is not implemented!", int(cfg.Type)) //nolint:staticcheck // 上游文案 WebClient.cs:90
 }
 
 func proxyHost(cfg ProxyConfig) string {
@@ -83,12 +83,12 @@ func dialSOCKS5(ctx context.Context, proxyAddr, target string, auth *socksAuth) 
 
 	host, portStr, err := net.SplitHostPort(target)
 	if err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, err
 	}
 	port, err := strconv.Atoi(portStr)
 	if err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, err
 	}
 
@@ -99,23 +99,23 @@ func dialSOCKS5(ctx context.Context, proxyAddr, target string, auth *socksAuth) 
 	}
 	greeting := append([]byte{0x05, byte(len(methods))}, methods...)
 	if _, err := conn.Write(greeting); err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, err
 	}
 	resp := make([]byte, 2)
 	if _, err := readFull(conn, resp); err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, err
 	}
 	if resp[0] != 0x05 {
-		conn.Close()
+		_ = conn.Close()
 		return nil, errors.New("socks5: invalid version")
 	}
 	switch resp[1] {
 	case 0x00:
 	case 0x02:
 		if auth.username == "" && auth.password == "" {
-			conn.Close()
+			_ = conn.Close()
 			return nil, errors.New("socks5: server requires auth but none configured")
 		}
 		ulen := len(auth.username)
@@ -126,19 +126,19 @@ func dialSOCKS5(ctx context.Context, proxyAddr, target string, auth *socksAuth) 
 		buf = append(buf, byte(plen))
 		buf = append(buf, auth.password...)
 		if _, err := conn.Write(buf); err != nil {
-			conn.Close()
+			_ = conn.Close()
 			return nil, err
 		}
 		if _, err := readFull(conn, resp); err != nil {
-			conn.Close()
+			_ = conn.Close()
 			return nil, err
 		}
 		if resp[1] != 0x00 {
-			conn.Close()
+			_ = conn.Close()
 			return nil, errors.New("socks5: authentication failed")
 		}
 	default:
-		conn.Close()
+		_ = conn.Close()
 		return nil, fmt.Errorf("socks5: unsupported auth method 0x%02x", resp[1])
 	}
 
@@ -151,7 +151,7 @@ func dialSOCKS5(ctx context.Context, proxyAddr, target string, auth *socksAuth) 
 		addr = append([]byte{0x04}, ip16...)
 	} else {
 		if len(host) > 255 {
-			conn.Close()
+			_ = conn.Close()
 			return nil, errors.New("socks5: host too long")
 		}
 		addr = append([]byte{0x03, byte(len(host))}, host...)
@@ -159,38 +159,38 @@ func dialSOCKS5(ctx context.Context, proxyAddr, target string, auth *socksAuth) 
 	req := append([]byte{0x05, 0x01, 0x00}, addr...)
 	req = binary.BigEndian.AppendUint16(req, uint16(port))
 	if _, err := conn.Write(req); err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, err
 	}
 	head := make([]byte, 4)
 	if _, err := readFull(conn, head); err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, err
 	}
 	if head[0] != 0x05 || head[1] != 0x00 {
-		conn.Close()
+		_ = conn.Close()
 		return nil, fmt.Errorf("socks5: connect failed (code 0x%02x)", head[1])
 	}
 	// discard the bound address
 	switch head[3] {
 	case 0x01:
 		if _, err := readFull(conn, make([]byte, 4+2)); err != nil {
-			conn.Close()
+			_ = conn.Close()
 			return nil, err
 		}
 	case 0x03:
 		l := make([]byte, 1)
 		if _, err := readFull(conn, l); err != nil {
-			conn.Close()
+			_ = conn.Close()
 			return nil, err
 		}
 		if _, err := readFull(conn, make([]byte, int(l[0])+2)); err != nil {
-			conn.Close()
+			_ = conn.Close()
 			return nil, err
 		}
 	case 0x04:
 		if _, err := readFull(conn, make([]byte, 16+2)); err != nil {
-			conn.Close()
+			_ = conn.Close()
 			return nil, err
 		}
 	}
@@ -211,12 +211,12 @@ func dialSOCKS4(ctx context.Context, proxyAddr, target string, auth *socksAuth) 
 
 	host, portStr, err := net.SplitHostPort(target)
 	if err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, err
 	}
 	port, err := strconv.Atoi(portStr)
 	if err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, err
 	}
 
@@ -237,17 +237,17 @@ func dialSOCKS4(ctx context.Context, proxyAddr, target string, auth *socksAuth) 
 	req = append(req, user...)
 	req = append(req, 0x00)
 	if _, err := conn.Write(req); err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, err
 	}
 
 	resp := make([]byte, 8)
 	if _, err := readFull(conn, resp); err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, err
 	}
 	if resp[1] != 0x5a {
-		conn.Close()
+		_ = conn.Close()
 		return nil, fmt.Errorf("socks4: connect failed (code 0x%02x)", resp[1])
 	}
 	_ = conn.SetDeadline(time.Time{})

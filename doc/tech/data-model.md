@@ -152,7 +152,7 @@ CREATE TABLE saved_state (
 |---|---|---|
 | `ServerConfig.json` | `server_config.config_json` | 字段一一映射（camelCase → snake_case 仅内部命名；对外 DTO 不变） |
 | `Indexers/<id>.json` | `indexer_config.config_json` | 键名保持上游原样（如 `username`、`apiKey`、`cookieheader`），便于导入工具 |
-| `Indexers/<id>.cookies` | `indexer_config.cookies_json` | Cookie jar 序列化 |
+| `Indexers/<id>.json` 内的 `CookieHeader` 项 | `indexer_config.cookies_json` | 上游 Cookie jar 以隐藏配置项（`HiddenStringConfigurationItem`，ConfigurationData.cs:17）存在配置数组内，**没有**独立 `<id>.cookies` 文件；导入工具抽取该项转成 Vestt cookie jar |
 | 进程内 CacheService | `cache_results` | 查询语义一致；内存索引加速（map[queryKey][]rowid） |
 
 导入工具（SHOULD，SPEC-14）：读取 Jackett 数据目录 → 逐表转换 → 报告跳过项。

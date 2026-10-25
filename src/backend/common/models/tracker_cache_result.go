@@ -14,11 +14,11 @@ import (
 // Ported from: Jackett.Common/Models/TrackerCacheResult.cs.
 type TrackerCacheResult struct {
 	ReleaseInfo
-	FirstSeen    time.Time  `json:"FirstSeen"`
-	Tracker      string     `json:"Tracker"`
-	TrackerId    string     `json:"TrackerId"`
-	TrackerType  string     `json:"TrackerType"`
-	CategoryDesc string     `json:"CategoryDesc"`
+	FirstSeen     time.Time `json:"FirstSeen"`
+	Tracker       string    `json:"Tracker"`
+	TrackerId     string    `json:"TrackerId"`
+	TrackerType   string    `json:"TrackerType"`
+	CategoryDesc  string    `json:"CategoryDesc"`
 	BlackholeLink *url.URL  `json:"BlackholeLink"`
 }
 

@@ -159,58 +159,93 @@ func jsonTokenString(v any) string {
 	}
 }
 
-// jsonColonFilterRe mirrors _JsonSelectorRegex: ":filter(key)" pairs.
-var jsonColonFilterRe = regexp.MustCompile(`:([A-Za-z]+)\(([^)]*)\)`)
+// jsonNextFilterMatch locates the next ":filter(key)" group in s exactly as
+// upstream _JsonSelectorRegex does (CardigannIndexer.cs:73):
+//
+//	\:(?<filter>.+?)\((?<key>.+?)\)(?=:|\z)
+//
+// Go's RE2 engine has no lookahead, so the closing-paren rule — the first
+// ')' followed by ':' or end-of-string — is scanned manually. The scan also
+// reproduces the regex engine's backtracking: the key may span inner parens
+// (nested filters like ":has(:contains(x))") and the filter may grow past
+// an inner '(' when no valid close exists. Returns the filter name, the key
+// and the index one past the closing paren.
+func jsonNextFilterMatch(s string) (filter, key string, end int, ok bool) {
+	for i := 0; i < len(s); i++ {
+		if s[i] != ':' {
+			continue
+		}
+		for p := i + 1; p < len(s); p++ {
+			if s[p] != '(' || p == i+1 {
+				continue // ".+?" requires a non-empty filter name
+			}
+			for k := p + 1; k < len(s); k++ {
+				if s[k] != ')' {
+					continue
+				}
+				if k+1 < len(s) && s[k+1] != ':' {
+					continue // lookahead (?=:|\z)
+				}
+				return s[i+1 : p], s[p+1 : k], k + 1, true
+			}
+			// no valid close for this '(': backtrack and grow the filter
+			// past the inner paren by trying the next '('
+		}
+	}
+	return "", "", 0, false
+}
 
-// jsonParseFieldSelector ports JsonParseFieldSelector: validates the
-// ":has(...)"/":not(...)"/":contains(...)" filter chain of a rows selector
-// and returns the base selector to feed SelectToken ("" when the row is
-// filtered out).
-func jsonParseFieldSelector(parsed any, rowSelector string) string {
+// jsonParseFieldSelector ports JsonParseFieldSelector (CardigannIndexer.cs
+// 2510-2580): validates the ":has(...)"/":not(...)"/":contains(...)" filter
+// chain of a rows selector and returns the base selector to feed
+// SelectToken. ok mirrors upstream's null return: false when any filter
+// rejects the node (upstream returns null, which is distinct from the empty
+// string it returns on success — that distinction is load-bearing in
+// JsonParseRowsSelector).
+func jsonParseFieldSelector(parsed any, rowSelector string) (string, bool) {
 	selector := strings.SplitN(rowSelector, ":", 2)[0]
 	var parsedObject any
 	var ok bool
 	if strings.TrimSpace(selector) == "" {
 		parsedObject = parsed
 	} else if parsedObject, ok = jsonSelectToken(parsed, selector); !ok {
-		return ""
+		return "", false
 	}
 
 	rest := rowSelector[len(selector):]
-	for len(rest) > 0 {
-		m := jsonColonFilterRe.FindStringSubmatchIndex(rest)
-		if m == nil {
+	for {
+		filter, key, end, ok := jsonNextFilterMatch(rest)
+		if !ok {
 			break
 		}
-		filter := rest[m[2]:m[3]]
-		key := rest[m[4]:m[5]]
-		rest = rest[m[1]:]
+		rest = rest[end:]
 		switch filter {
 		case "has":
-			if strings.Contains(key, ":") {
-				if jsonParseFieldSelector(parsedObject, key) == "" {
-					return ""
+			if _, _, _, nested := jsonNextFilterMatch(key); nested {
+				// upstream: innerMatch.Success → recurse with the full key
+				if _, hit := jsonParseFieldSelector(parsedObject, key); !hit {
+					return "", false
 				}
-			} else if _, ok := jsonSelectToken(parsedObject, key); !ok {
-				return ""
+			} else if _, hit := jsonSelectToken(parsedObject, key); !hit {
+				return "", false
 			}
 		case "not":
-			if strings.Contains(key, ":") {
-				if jsonParseFieldSelector(parsedObject, key) != "" {
-					return ""
+			if _, _, _, nested := jsonNextFilterMatch(key); nested {
+				if _, hit := jsonParseFieldSelector(parsedObject, key); hit {
+					return "", false
 				}
-			} else if _, ok := jsonSelectToken(parsedObject, key); ok {
-				return ""
+			} else if _, hit := jsonSelectToken(parsedObject, key); hit {
+				return "", false
 			}
 		case "contains":
 			if !strings.Contains(jsonTokenString(parsedObject), key) {
-				return ""
+				return "", false
 			}
 		default:
 			// upstream logs the error and continues with the next match
 		}
 	}
-	return selector
+	return selector, true
 }
 
 // jsonParseRowsSelector ports JsonParseRowsSelector: applies the base
@@ -234,7 +269,10 @@ func (x *Cardigann) jsonParseRowsSelector(parsed any, rowSelector string) []any 
 	rest := rowSelector[len(selector):]
 	out := make([]any, 0, len(arr))
 	for _, t := range arr {
-		if rest == "" || jsonParseFieldSelector(t, rest) != "" {
+		// upstream keeps rows where JsonParseFieldSelector != null; with an
+		// empty rest the call returns the empty selector (success), so no
+		// short-circuit is needed
+		if _, keep := jsonParseFieldSelector(t, rest); keep {
 			out = append(out, t)
 		}
 	}
@@ -254,18 +292,21 @@ func (x *Cardigann) handleJSONSelector(sel *SelectorBlock, parent any, vars Temp
 
 	if sel.Selector != "" {
 		selectorSelector := ApplyTemplate(strings.TrimLeft(sel.Selector, "."), vars, nil)
-		fieldSelector := jsonParseFieldSelector(parent, selectorSelector)
+		fieldSelector, selOK := jsonParseFieldSelector(parent, selectorSelector)
 
 		var selection any
 		found := false
-		if fieldSelector != "" {
+		if selOK {
+			// upstream checks fieldSelector != null only; Newtonsoft's
+			// SelectToken("") returns the root document, which
+			// jsonSelectToken("", → root) mirrors
 			selection, found = jsonSelectToken(parent, fieldSelector)
 		}
 
 		if !found {
 			if required {
 				b, _ := json.Marshal(parent)
-				return "", fmt.Errorf("Selector %q didn't match %s", selectorSelector, string(b))
+				return "", fmt.Errorf("Selector %q didn't match %s", selectorSelector, string(b)) //nolint:staticcheck // 上游文案 CardigannIndexer.cs:1393
 			}
 			return "", nil
 		}
@@ -284,7 +325,6 @@ func (x *Cardigann) handleJSONSelector(sel *SelectorBlock, parent any, vars Temp
 		for _, switchCase := range sel.Case {
 			if (haveValue && value == switchCase.Key) || switchCase.Key == "*" {
 				value = ApplyTemplate(switchCase.Value, vars, nil)
-				haveValue = true
 				matched = true
 				break
 			}
@@ -292,7 +332,7 @@ func (x *Cardigann) handleJSONSelector(sel *SelectorBlock, parent any, vars Temp
 		if !matched {
 			if required {
 				b, _ := json.Marshal(parent)
-				return "", fmt.Errorf("None of the case selectors matched %s", string(b))
+				return "", fmt.Errorf("None of the case selectors matched %s", string(b)) //nolint:staticcheck // 上游文案 CardigannIndexer.cs:1426
 			}
 			return "", nil
 		}

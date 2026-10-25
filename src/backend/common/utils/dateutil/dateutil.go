@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"unicode"
 
 	"vestt/common/utils/parseutil"
 )
@@ -332,7 +331,7 @@ func ParseDateTimeGoLang(date, layout string, relativeFrom ...time.Time) (time.T
 func parseDateTimeLayout(date, layout string) (time.Time, error) {
 	t, err := time.ParseInLocation(layout, date, time.Local)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("Error while parsing DateTime %q, using layout %q: %v", date, layout, err)
+		return time.Time{}, fmt.Errorf("Error while parsing DateTime %q, using layout %q: %v", date, layout, err) //nolint:staticcheck // 上游文案 DateTimeUtil.cs:315
 	}
 	return t, nil
 }
@@ -371,14 +370,4 @@ func dotnetToGoLayout(layout string) string {
 // "Mon, 02 Jan 2006 15:04:05 -0700".
 func FormatRFC1123Z(t time.Time) string {
 	return t.Format("Mon, 02 Jan 2006 15:04:05 -0700")
-}
-
-// isAllDigits kept for parity with upstream str.IsAllDigits.
-func isAllDigits(s string) bool {
-	for _, r := range s {
-		if !unicode.IsDigit(r) {
-			return false
-		}
-	}
-	return len(s) > 0
 }

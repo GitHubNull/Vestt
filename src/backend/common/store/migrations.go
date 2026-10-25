@@ -124,7 +124,7 @@ func (s *Store) tableInfo(ctx context.Context, table string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var cols []string
 	for rows.Next() {
 		var name string

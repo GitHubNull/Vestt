@@ -93,7 +93,7 @@ func runSample(t *testing.T, defs map[string]*IndexerDefinition, tc sampleCase) 
 		t.Fatalf("fixture %s: %v", tc.fixture, err)
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, string(fixture))
+		_, _ = fmt.Fprint(w, string(fixture))
 	}))
 	t.Cleanup(srv.Close)
 

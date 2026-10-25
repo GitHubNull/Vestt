@@ -83,7 +83,7 @@ func (s *Store) CacheList(ctx context.Context) ([]*CacheResultRow, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var out []*CacheResultRow
 	for rows.Next() {
 		r := &CacheResultRow{}

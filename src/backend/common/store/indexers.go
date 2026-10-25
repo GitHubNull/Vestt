@@ -25,7 +25,7 @@ func (s *Store) ListIndexerConfigs(ctx context.Context) ([]*IndexerConfigRow, er
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var out []*IndexerConfigRow
 	for rows.Next() {
 		r := &IndexerConfigRow{}

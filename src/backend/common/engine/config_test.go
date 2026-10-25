@@ -108,7 +108,7 @@ func TestGetBaseTemplateVariables(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewCardigann: %v", err)
 	}
-	cd := x.Base.ConfigData()
+	cd := x.ConfigData()
 	cd.GetDynamic("username").(*configdata.StringItem).Value = "alice"
 	cd.GetDynamic("freeleech").(*configdata.BoolItem).Value = true
 	cd.GetDynamic("sort").(*configdata.SelectItem).Value = "leechers"
@@ -127,7 +127,7 @@ func TestGetBaseTemplateVariables(t *testing.T) {
 	if v, ok := vars[".Config.tags"].([]string); !ok || len(v) != 2 {
 		t.Errorf("tags = %v", vars[".Config.tags"])
 	}
-	if v, ok := vars[".False"].(any); ok && v != nil {
+	if v := vars[".False"]; v != nil {
 		t.Errorf(".False = %v, want nil", v)
 	}
 	if vars[".True"] != "True" {

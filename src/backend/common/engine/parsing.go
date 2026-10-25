@@ -50,7 +50,7 @@ func (x *Cardigann) checkIfLoginNeeded(res *httpclient.Result, requestURL string
 		if hint := x.redirectDomainHint(requestURL, location); hint != "" {
 			errMsg := "Got redirected to another domain. Try changing the indexer URL to " + hint + "."
 			if x.Definition.Followredirect {
-				if cd := x.Base.ConfigData(); cd != nil && cd.SiteLink != nil {
+				if cd := x.ConfigData(); cd != nil && cd.SiteLink != nil {
 					cd.SiteLink.Value = hint
 					x.SiteLinkValue = hint
 					x.SaveConfig(context.Background())
@@ -86,7 +86,7 @@ func (x *Cardigann) relogin(ctx context.Context) error {
 		return err
 	}
 	if gotCaptcha {
-		return errors.New("Relogin failed")
+		return errors.New("Relogin failed") //nolint:staticcheck // 上游文案 CardigannIndexer.cs:882
 	}
 	if _, err := x.testLogin(ctx); err != nil {
 		return err
@@ -163,7 +163,7 @@ func (x *Cardigann) parseJSONResponse(ctx context.Context, res *httpclient.Resul
 	results := x.decodeBody(res.Body)
 
 	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Error Parsing Json Response: Status=%d Response=%s", res.StatusCode, results)
+		return nil, fmt.Errorf("Error Parsing Json Response: Status=%d Response=%s", res.StatusCode, results) //nolint:staticcheck // 上游文案 CardigannIndexer.cs:1637
 	}
 
 	if resp.NoResultsMessage != "" && strings.Contains(results, resp.NoResultsMessage) ||
@@ -174,10 +174,10 @@ func (x *Cardigann) parseJSONResponse(ctx context.Context, res *httpclient.Resul
 	parsed, err := parseJSON(res.Body)
 	if err != nil {
 		x.log().Warn(fmt.Sprintf("Unexpected response content (%d bytes): %s", len(res.Body), results))
-		return nil, fmt.Errorf("Error Parsing Json Response: %w", err)
+		return nil, fmt.Errorf("Error Parsing Json Response: %w", err) //nolint:staticcheck // 上游文案 CardigannIndexer.cs:1657
 	}
 	if parsed == nil {
-		return nil, errors.New("Error Parsing Json Response")
+		return nil, errors.New("Error Parsing Json Response") //nolint:staticcheck // 上游文案 CardigannIndexer.cs:1662
 	}
 
 	if search.Rows.Count != nil {
@@ -205,7 +205,7 @@ func (x *Cardigann) parseJSONResponse(ctx context.Context, res *httpclient.Resul
 		if search.Rows.MissingAttributeEqualsNoResults {
 			return nil, nil
 		}
-		return nil, errors.New("Error Parsing Rows Selector. There are 0 rows.")
+		return nil, errors.New("Error Parsing Rows Selector. There are 0 rows.") //nolint:staticcheck // 上游文案 CardigannIndexer.cs:1691
 	}
 	if len(rowsArray) == 0 {
 		return nil, nil
@@ -223,7 +223,7 @@ func (x *Cardigann) parseJSONResponse(ctx context.Context, res *httpclient.Resul
 				if search.Rows.MissingAttributeEqualsNoResults {
 					continue
 				}
-				return nil, fmt.Errorf("Error Parsing Rows Selector. There are 0 rows.")
+				return nil, fmt.Errorf("Error Parsing Rows Selector. There are 0 rows.") //nolint:staticcheck // 上游文案 CardigannIndexer.cs:1691
 			}
 			selObj = attr
 		}
@@ -308,7 +308,7 @@ func (x *Cardigann) parseJSONFields(mulRow, row any, release *models.ReleaseInfo
 			if isOptional {
 				continue
 			}
-			return false, fmt.Errorf("Error while parsing field=%s, selector=%s, value=%s: %w",
+			return false, fmt.Errorf("Error while parsing field=%s, selector=%s, value=%s: %w", //nolint:staticcheck // 上游文案 CardigannIndexer.cs:1762
 				field.Name, selectorName(field.Selector), value, err)
 		}
 	}
@@ -427,7 +427,7 @@ func (x *Cardigann) parseHTMLRowFields(row *goquery.Selection, vars TemplateVars
 			if isOptional {
 				continue
 			}
-			return nil, fmt.Errorf("Error while parsing field=%s, selector=%s, value=%s: %w",
+			return nil, fmt.Errorf("Error while parsing field=%s, selector=%s, value=%s: %w", //nolint:staticcheck // 上游文案 CardigannIndexer.cs:1900
 				field.Name, selectorName(field.Selector), value, herr)
 		}
 	}
@@ -452,7 +452,7 @@ func (x *Cardigann) parseHTMLRowFields(row *goquery.Selection, vars TemplateVars
 			prev = prevElementSibling(cur)
 		}
 		if value == "" && !dateHeaders.Optional {
-			return nil, fmt.Errorf("No date header row found")
+			return nil, fmt.Errorf("No date header row found") //nolint:staticcheck // 上游文案 CardigannIndexer.cs:1945
 		}
 		if value != "" {
 			t, _ := dateutil.FromUnknown(value, "")
