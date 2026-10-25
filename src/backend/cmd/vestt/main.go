@@ -24,6 +24,7 @@ import (
 	"vestt/common/engine"
 	"vestt/common/httpclient"
 	"vestt/common/indexer"
+	_ "vestt/common/indexer/manual" // SPEC-08 batch 1: registers 21 manual indexers
 	"vestt/common/services"
 	"vestt/common/store"
 	"vestt/common/utils/logging"

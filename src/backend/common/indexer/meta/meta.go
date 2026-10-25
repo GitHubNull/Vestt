@@ -47,9 +47,9 @@ type ImdbResolver interface {
 // baseMeta carries the shared BaseMetaIndexer behaviour.
 type baseMeta struct {
 	indexer.Base
-	idValue string
-	members Members
-	filter  FilterFunc
+	idValue  string
+	members  Members
+	filter   FilterFunc
 	resolver ImdbResolver
 }
 

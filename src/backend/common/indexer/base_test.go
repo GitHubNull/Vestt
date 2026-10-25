@@ -557,13 +557,13 @@ func TestResultsForQueryBackoffDoubling(t *testing.T) {
 	q := models.NewTorznabQuery()
 	q.QueryType = "search"
 
-	b.ResultsForQueryWith(context.Background(), q, false, performErr)
-	first := b.expireAt.Sub(time.Now())
+	_, _ = b.ResultsForQueryWith(context.Background(), q, false, performErr)
+	first := time.Until(b.expireAt)
 	if first < 9*time.Minute || first > 11*time.Minute {
 		t.Fatalf("first backoff: %v", first)
 	}
-	b.ResultsForQueryWith(context.Background(), q, false, performErr)
-	second := b.expireAt.Sub(time.Now())
+	_, _ = b.ResultsForQueryWith(context.Background(), q, false, performErr)
+	second := time.Until(b.expireAt)
 	if second < 19*time.Minute || second > 21*time.Minute {
 		t.Fatalf("second backoff: %v", second)
 	}
@@ -625,7 +625,7 @@ func TestDownloadHTTPEscapingAndStatus(t *testing.T) {
 	var gotURL string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotURL = r.URL.String()
-		w.Write([]byte("torrent-bytes"))
+		_, _ = w.Write([]byte("torrent-bytes"))
 	}))
 	defer srv.Close()
 
@@ -657,10 +657,10 @@ func TestDownloadHTTPEscapingAndStatus(t *testing.T) {
 func TestDownloadResolveHook(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/details/1" {
-			w.Write([]byte("<html></html>"))
+			_, _ = w.Write([]byte("<html></html>"))
 			return
 		}
-		w.Write([]byte("real-torrent"))
+		_, _ = w.Write([]byte("real-torrent"))
 	}))
 	defer srv.Close()
 

@@ -573,7 +573,7 @@ func (b *Base) Test(ctx context.Context, perform PerformFunc) error {
 		return err
 	}
 	if len(result.Releases) == 0 {
-		return fmt.Errorf("Test search in %s => Found no results while trying to browse this tracker. This may be an issue with the indexer, or other indexer settings such as search freeleech only etc.", b.NameValue)
+		return fmt.Errorf("Test search in %s => Found no results while trying to browse this tracker. This may be an issue with the indexer, or other indexer settings such as search freeleech only etc.", b.NameValue) //nolint:staticcheck // upstream BaseIndexer.cs error text, kept 1:1
 	}
 	b.logger().Info(fmt.Sprintf("Test search in %s => Found %d releases [%dms]", b.NameValue, len(result.Releases), result.ElapsedTime))
 	return nil
@@ -620,7 +620,7 @@ func (b *Base) DownloadWith(ctx context.Context, link *url.URL, method, referer 
 		return nil, err
 	}
 	if result.StatusCode != http.StatusOK && result.StatusCode != http.StatusContinue && result.StatusCode != http.StatusPartialContent {
-		return nil, fmt.Errorf("Remote server returned %d", result.StatusCode)
+		return nil, fmt.Errorf("Remote server returned %d", result.StatusCode) //nolint:staticcheck // upstream BaseIndexer.cs error text, kept 1:1
 	}
 	return result.Body, nil
 }
